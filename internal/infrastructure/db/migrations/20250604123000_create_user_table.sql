@@ -2,7 +2,8 @@
 CREATE TABLE user_data (
     id     uuid NOT NULL DEFAULT uuid_generate_v4()  PRIMARY KEY,
     login   varchar(64) NOT NULL UNIQUE,
-    password  varchar(64) NOT NULL
+    password  varchar(64) NOT NULL,
+    created_at TIMESTAMP
 );
 
 CREATE INDEX user_login_index on user_data USING btree(login);
