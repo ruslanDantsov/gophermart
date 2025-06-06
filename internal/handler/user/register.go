@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/mailru/easyjson"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"github.com/ruslanDantsov/gophermart/internal/dto/view"
 	"github.com/ruslanDantsov/gophermart/internal/model"
+	"github.com/ruslanDantsov/gophermart/internal/service"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
@@ -19,15 +21,21 @@ type IUserServiceRegister interface {
 	AddUser(ctx context.Context, userCreateCommand command.UserCreateCommand) (*model.UserData, error)
 }
 
-type UserHandler struct {
-	Log         zap.Logger
-	userService IUserServiceRegister
+type IAuthUtils interface {
+	GenerateJWT(id uuid.UUID, username string) (*service.TokenResult, error)
 }
 
-func NewUserHandler(log *zap.Logger, userService IUserServiceRegister) *UserHandler {
+type UserHandler struct {
+	Log         zap.Logger
+	UserService IUserServiceRegister
+	AuthService IAuthUtils
+}
+
+func NewUserHandler(log *zap.Logger, userService IUserServiceRegister, authService IAuthUtils) *UserHandler {
 	return &UserHandler{
 		Log:         *log,
-		userService: userService,
+		UserService: userService,
+		AuthService: authService,
 	}
 }
 
@@ -52,7 +60,7 @@ func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
 		}
 	}
 
-	userData, err := h.userService.AddUser(ginContext.Request.Context(), userCreateCommand)
+	userData, err := h.UserService.AddUser(ginContext.Request.Context(), userCreateCommand)
 	if err != nil {
 		h.Log.Error("Failed to save user: " + err.Error())
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

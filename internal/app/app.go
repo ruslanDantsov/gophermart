@@ -31,7 +31,9 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 	userService := service.NewUserService(userRepository)
 
 	commonHandler := handler.NewCommonHandler(log)
-	userHandler := user.NewUserHandler(log, userService)
+
+	authService := service.NewAuthService(cfg.JWTSecret)
+	userHandler := user.NewUserHandler(log, userService, authService)
 
 	return &GophermartApp{
 		cfg:           cfg,

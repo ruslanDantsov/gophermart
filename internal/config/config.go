@@ -10,6 +10,7 @@ type Config struct {
 	Address            string `short:"a" long:"address" env:"ADDRESS" default:"localhost:8090" description:"Server host address"`
 	LogLevel           string `short:"l" long:"log" env:"LOG_LEVEL" default:"INFO" description:"Log Level"`
 	DatabaseConnection string `short:"d" long:"database" env:"DATABASE_DSN" description:"Database connection string"`
+	JWTSecret          string `short:"j" long:"jwt" env:"JWT_SECRET" default:"rabbit_Hole" description:"Database connection string"`
 }
 
 func NewConfig(cliArgs []string) (*Config, error) {
