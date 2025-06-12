@@ -5,6 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/gophermart/internal/config"
 	"github.com/ruslanDantsov/gophermart/internal/handler"
+	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
+	"github.com/ruslanDantsov/gophermart/internal/handler/order"
 	"github.com/ruslanDantsov/gophermart/internal/handler/user"
 	"github.com/ruslanDantsov/gophermart/internal/infrastructure/storage/postgre"
 	"github.com/ruslanDantsov/gophermart/internal/repository"
@@ -19,6 +21,7 @@ type GophermartApp struct {
 	storage       *postgre.PostgreStorage
 	commonHandler *handler.CommonHandler
 	userHandler   *user.UserHandler
+	orderHandler  *order.OrderHandler
 }
 
 func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) (*GophermartApp, error) {
@@ -28,12 +31,15 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 	}
 
 	userRepository := repository.NewUserRepository(storage)
-	userService := service.NewUserService(userRepository)
+	passwordService := &service.PasswordService{}
+	userService := service.NewUserService(userRepository, passwordService)
 
 	commonHandler := handler.NewCommonHandler(log)
 
 	authService := service.NewAuthService(cfg.JWTSecret)
 	userHandler := user.NewUserHandler(log, userService, authService)
+
+	orderHandler := order.NewOrderHandler(log)
 
 	return &GophermartApp{
 		cfg:           cfg,
@@ -41,6 +47,7 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 		storage:       storage,
 		commonHandler: commonHandler,
 		userHandler:   userHandler,
+		orderHandler:  orderHandler,
 	}, nil
 }
 
@@ -49,6 +56,11 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 
 	router.POST("/api/user/register", app.userHandler.HandleRegisterUser)
 	router.POST("/api/user/login", app.userHandler.HandleAuthentication)
+
+	protected := router.Group("/")
+	protected.Use(middleware.AuthMiddleware(app.cfg.JWTSecret, app.logger))
+
+	protected.POST("/api/user/orders", app.orderHandler.HandleRegisterOrder)
 
 	router.NoRoute(app.commonHandler.HandleUnsupportedRequest)
 

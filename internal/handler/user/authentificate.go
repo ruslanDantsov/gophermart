@@ -33,9 +33,14 @@ func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
 		}
 	}
 
-	//TODO: add logic for check creds in DB
+	userData, err := h.UserService.FindByLoginAndPassword(ginContext.Request.Context(), authCommand.Login, authCommand.Password)
+	if err != nil {
+		h.Log.Error(fmt.Sprintf("User %s not found: %s", authCommand.Login, err.Error()))
+		ginContext.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("User %s not found", authCommand.Login)})
+		return
+	}
 
-	tokenResult, err := h.AuthService.GenerateJWT(uuid.New(), authCommand.Login)
+	tokenResult, err := h.AuthService.GenerateJWT(uuid.New(), userData.Login)
 	if err != nil {
 		h.Log.Error("Failed to generate token: " + err.Error())
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})

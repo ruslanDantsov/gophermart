@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type AuthService struct {
+type JWTService struct {
 	JWTSecret string
 }
 
@@ -15,11 +15,11 @@ type TokenResult struct {
 	ExpiresIn   int64
 }
 
-func NewAuthService(secret string) *AuthService {
-	return &AuthService{JWTSecret: secret}
+func NewAuthService(secret string) *JWTService {
+	return &JWTService{JWTSecret: secret}
 }
 
-func (s *AuthService) GenerateJWT(id uuid.UUID, username string) (*TokenResult, error) {
+func (s *JWTService) GenerateJWT(id uuid.UUID, username string) (*TokenResult, error) {
 	expirationTime := time.Now().Add(time.Hour * 1).Unix()
 	claims := jwt.MapClaims{
 		"id":       id,

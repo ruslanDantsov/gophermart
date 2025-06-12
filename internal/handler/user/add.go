@@ -17,8 +17,9 @@ import (
 	"strings"
 )
 
-type IUserServiceRegister interface {
+type IUserService interface {
 	AddUser(ctx context.Context, userCreateCommand command.UserCreateCommand) (*model.UserData, error)
+	FindByLoginAndPassword(ctx context.Context, login string, password string) (*model.UserData, error)
 }
 
 type IAuthUtils interface {
@@ -27,11 +28,11 @@ type IAuthUtils interface {
 
 type UserHandler struct {
 	Log         zap.Logger
-	UserService IUserServiceRegister
+	UserService IUserService
 	AuthService IAuthUtils
 }
 
-func NewUserHandler(log *zap.Logger, userService IUserServiceRegister, authService IAuthUtils) *UserHandler {
+func NewUserHandler(log *zap.Logger, userService IUserService, authService IAuthUtils) *UserHandler {
 	return &UserHandler{
 		Log:         *log,
 		UserService: userService,

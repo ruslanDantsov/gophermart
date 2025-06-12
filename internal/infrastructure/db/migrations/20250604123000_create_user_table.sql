@@ -1,6 +1,6 @@
 -- +goose Up
 CREATE TABLE user_data (
-    id     uuid NOT NULL DEFAULT uuid_generate_v4()  PRIMARY KEY,
+    id     uuid NOT NULL PRIMARY KEY,
     login   varchar(64) NOT NULL UNIQUE,
     password  varchar(64) NOT NULL,
     created_at TIMESTAMP
