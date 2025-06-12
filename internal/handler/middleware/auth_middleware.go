@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -46,8 +47,9 @@ func AuthMiddleware(jwtSecret string, logger *zap.Logger) gin.HandlerFunc {
 		}
 
 		if ok {
+			userId, _ := uuid.Parse(claims["id"].(string))
 			gContext.Set("username", claims["username"])
-			gContext.Set("id", claims["id"])
+			gContext.Set("userId", userId)
 		}
 
 		gContext.Next()

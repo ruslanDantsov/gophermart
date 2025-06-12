@@ -1,48 +1,81 @@
 package order
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/gin-gonic/gin"
-
+	"github.com/ruslanDantsov/gophermart/internal/dto/command"
+	"github.com/ruslanDantsov/gophermart/internal/errs"
+	"github.com/ruslanDantsov/gophermart/internal/model"
 	"go.uber.org/zap"
 	"net/http"
 )
 
-type OrderHandler struct {
-	Log zap.Logger
+type IOrderService interface {
+	AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*model.Order, error)
 }
 
-func NewOrderHandler(log *zap.Logger) *OrderHandler {
+type OrderHandler struct {
+	Log          zap.Logger
+	OrderService IOrderService
+}
+
+func NewOrderHandler(log *zap.Logger, orderService IOrderService) *OrderHandler {
 	return &OrderHandler{
-		Log: *log,
+		Log:          *log,
+		OrderService: orderService,
 	}
 }
 
 func (h *OrderHandler) HandleRegisterOrder(ginContext *gin.Context) {
 	contentType := ginContext.GetHeader("Content-Type")
 	if contentType != "text/plain" {
-		h.Log.Info(fmt.Sprintf("Unsupported content type: %s ", contentType))
+		h.Log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported content type"})
 		return
 	}
 
 	orderNumber, err := ginContext.GetRawData()
-	h.Log.Info(fmt.Sprintf("Order %s has been registered", orderNumber))
 
 	if err != nil {
-		h.Log.Info(fmt.Sprintf("Invalid request body: %s ", err.Error()))
+		h.Log.Error(fmt.Sprintf("Invalid request body: %s ", err.Error()))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	if err := goluhn.Validate(string(orderNumber)); err != nil {
-		h.Log.Info(fmt.Sprintf("Invalid order number: %s ", err.Error()))
+		h.Log.Error(fmt.Sprintf("Invalid order number: %s ", err.Error()))
 		ginContext.JSON(http.StatusUnprocessableEntity, gin.H{"error": "Invalid order number"})
 		return
 	}
 
+	_, err = h.OrderService.AddOrder(h.getContextWithCurrentUser(ginContext), command.OrderCreateCommand{Number: string(orderNumber)})
+
+	if err != nil {
+		var appErr *errs.AppError
+		if errors.As(err, &appErr) {
+			switch appErr.Code {
+			case errs.ORDER_ADDED_BY_CURRENT_USER:
+				ginContext.Writer.WriteHeader(http.StatusOK)
+			case errs.ORDER_ADDED_BY_ANOTHER_USER:
+				ginContext.Writer.WriteHeader(http.StatusConflict)
+			default:
+				ginContext.JSON(http.StatusInternalServerError, gin.H{"error": appErr.Message})
+			}
+			h.Log.Error(fmt.Sprintf(appErr.Message+", description: %s ", err.Error()))
+			return
+		}
+	}
+
 	ginContext.Header("Content-Type", "application/json")
 	ginContext.Writer.WriteHeader(http.StatusAccepted)
+}
 
+func (h *OrderHandler) getContextWithCurrentUser(ginContext *gin.Context) context.Context {
+	rawUserId, _ := ginContext.Get("userId")
+	userId := rawUserId
+	ctx := context.WithValue(ginContext.Request.Context(), "userId", userId)
+	return ctx
 }

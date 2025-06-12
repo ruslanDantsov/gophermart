@@ -42,7 +42,9 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 	authService := service.NewAuthService(cfg.JWTSecret)
 	userHandler := user.NewUserHandler(log, userService, authService)
 
-	orderHandler := order.NewOrderHandler(log)
+	orderRepository := repository.NewOrderRepository(storage)
+	orderService := service.NewOrderService(orderRepository)
+	orderHandler := order.NewOrderHandler(log, orderService)
 
 	return &GophermartApp{
 		cfg:           cfg,
@@ -85,6 +87,9 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 	app.logger.Info("Shutting down server...")
 
 	//TODO: add time constant for graceful shutdown
+	//TODO: add waiting for background processes to complete
+	//TODO: add health checks for control state of server
+
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

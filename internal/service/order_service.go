@@ -1,0 +1,45 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"github.com/google/uuid"
+	"github.com/ruslanDantsov/gophermart/internal/dto/command"
+	"github.com/ruslanDantsov/gophermart/internal/model"
+	"time"
+)
+
+type IOrderRepository interface {
+	Save(ctx context.Context, order *model.Order) (*model.Order, error)
+}
+type OrderService struct {
+	OrderRepository IOrderRepository
+}
+
+func NewOrderService(orderRepository IOrderRepository) *OrderService {
+	return &OrderService{
+		OrderRepository: orderRepository,
+	}
+}
+
+func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*model.Order, error) {
+	userId, ok := ctx.Value("userId").(uuid.UUID)
+	if !ok {
+		return nil, errors.New("userId not found in context")
+	}
+
+	rawOrder := &model.Order{
+		ID:        uuid.New(),
+		Number:    orderCreateCommand.Number,
+		Status:    model.ORDER_NEW_STATUS,
+		Accrual:   0,
+		CreatedAt: time.Now(),
+		UserID:    userId,
+	}
+
+	if _, err := s.OrderRepository.Save(ctx, rawOrder); err != nil {
+		return nil, err
+	}
+
+	return rawOrder, nil
+}

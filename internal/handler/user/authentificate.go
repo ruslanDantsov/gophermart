@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"net/http"
 	"strings"
@@ -40,7 +39,7 @@ func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
 		return
 	}
 
-	tokenResult, err := h.AuthService.GenerateJWT(uuid.New(), userData.Login)
+	tokenResult, err := h.AuthService.GenerateJWT(userData.ID, userData.Login)
 	if err != nil {
 		h.Log.Error("Failed to generate token: " + err.Error())
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
