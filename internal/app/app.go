@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/gophermart/internal/config"
 	"github.com/ruslanDantsov/gophermart/internal/handler"
@@ -13,6 +15,7 @@ import (
 	"github.com/ruslanDantsov/gophermart/internal/service"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 type GophermartApp struct {
@@ -52,6 +55,7 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 }
 
 func (app *GophermartApp) Run(ctx context.Context) error {
+
 	router := gin.Default()
 
 	router.POST("/api/user/register", app.userHandler.HandleRegisterUser)
@@ -64,6 +68,30 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 
 	router.NoRoute(app.commonHandler.HandleUnsupportedRequest)
 
-	return http.ListenAndServe(app.cfg.Address, router)
+	srv := &http.Server{
+		Addr:    app.cfg.Address,
+		Handler: router,
+	}
 
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			app.logger.Fatal("Server error", zap.Error(err))
+		}
+	}()
+
+	app.logger.Info("Server started")
+
+	<-ctx.Done()
+	app.logger.Info("Shutting down server...")
+
+	//TODO: add time constant for graceful shutdown
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("server forced to shutdown: %w", err)
+	}
+
+	app.logger.Info("Server exited properly")
+	return nil
 }
