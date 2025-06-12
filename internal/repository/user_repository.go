@@ -25,7 +25,7 @@ func (r *UserRepository) Save(ctx context.Context, userData model.UserData) erro
 
 	_, err := r.storage.Conn.Exec(ctx,
 		query.InsertOrUpdateUserData,
-		userData.Id,
+		userData.ID,
 		userData.Login,
 		userData.Password,
 		userData.CreatedAt)
@@ -48,7 +48,7 @@ func (r *UserRepository) Save(ctx context.Context, userData model.UserData) erro
 
 func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*model.UserData, error) {
 	var (
-		existingId        uuid.UUID
+		existingID        uuid.UUID
 		existingLogin     string
 		existingPassword  string
 		existingCreatedAt time.Time
@@ -57,7 +57,7 @@ func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*model.
 	err := r.storage.Conn.QueryRow(ctx,
 		query.FindUserByLogin,
 		login).
-		Scan(&existingId, &existingLogin, &existingPassword, &existingCreatedAt)
+		Scan(&existingID, &existingLogin, &existingPassword, &existingCreatedAt)
 
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -74,7 +74,7 @@ func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*model.
 	}
 
 	userData := &model.UserData{
-		Id:        existingId,
+		ID:        existingID,
 		Login:     existingLogin,
 		Password:  existingPassword,
 		CreatedAt: existingCreatedAt,

@@ -71,7 +71,7 @@ func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
 	ginContext.Writer.WriteHeader(http.StatusOK)
 
 	userViewModel := view.UserViewModel{
-		Id:        userData.Id,
+		ID:        userData.ID,
 		Login:     userData.Login,
 		CreatedAt: userData.CreatedAt,
 	}

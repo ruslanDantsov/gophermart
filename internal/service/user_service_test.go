@@ -102,7 +102,7 @@ func TestUserService_FindByLoginAndPassword_Success(t *testing.T) {
 	passwordService := new(MockPasswordService)
 
 	user := &model.UserData{
-		Id:        uuid.New(),
+		ID:        uuid.New(),
 		Login:     "testuser",
 		Password:  "hashed123",
 		CreatedAt: time.Now(),
@@ -144,7 +144,7 @@ func TestUserService_FindByLoginAndPassword_InvalidPassword(t *testing.T) {
 	passwordService := new(MockPasswordService)
 
 	user := &model.UserData{
-		Id:        uuid.New(),
+		ID:        uuid.New(),
 		Login:     "testuser",
 		Password:  "hashed123",
 		CreatedAt: time.Now(),

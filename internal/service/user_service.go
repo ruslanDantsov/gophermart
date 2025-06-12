@@ -38,9 +38,9 @@ func (s *UserService) AddUser(ctx context.Context, userCreateCommand command.Use
 	}
 
 	rawUserData := model.UserData{
-		Id:        uuid.New(),
+		ID:        uuid.New(),
 		Login:     userCreateCommand.Login,
-		Password:  string(hashedPassword),
+		Password:  hashedPassword,
 		CreatedAt: time.Now(),
 	}
 

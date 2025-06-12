@@ -6,7 +6,7 @@ import (
 )
 
 type UserData struct {
-	Id        uuid.UUID
+	ID        uuid.UUID
 	Login     string
 	Password  string
 	CreatedAt time.Time

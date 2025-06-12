@@ -38,7 +38,7 @@ func easyjsonC68243e7DecodeGithubComRuslanDantsovGophermartInternalDtoView(in *j
 		switch key {
 		case "id":
 			if data := in.UnsafeBytes(); in.Ok() {
-				in.AddError((out.Id).UnmarshalText(data))
+				in.AddError((out.ID).UnmarshalText(data))
 			}
 		case "login":
 			out.Login = string(in.String())
@@ -63,7 +63,7 @@ func easyjsonC68243e7EncodeGithubComRuslanDantsovGophermartInternalDtoView(out *
 	{
 		const prefix string = ",\"id\":"
 		out.RawString(prefix[1:])
-		out.RawText((in.Id).MarshalText())
+		out.RawText((in.ID).MarshalText())
 	}
 	{
 		const prefix string = ",\"login\":"
