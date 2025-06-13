@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"github.com/ruslanDantsov/gophermart/internal/model"
@@ -23,10 +22,7 @@ func NewOrderService(orderRepository IOrderRepository) *OrderService {
 }
 
 func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*model.Order, error) {
-	userId, ok := ctx.Value("userId").(uuid.UUID)
-	if !ok {
-		return nil, errors.New("userId not found in context")
-	}
+	userId := ctx.Value("userId").(uuid.UUID)
 
 	rawOrder := &model.Order{
 		ID:        uuid.New(),

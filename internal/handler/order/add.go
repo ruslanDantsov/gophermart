@@ -51,7 +51,7 @@ func (h *OrderHandler) HandleRegisterOrder(ginContext *gin.Context) {
 		return
 	}
 
-	_, err = h.OrderService.AddOrder(h.getContextWithCurrentUser(ginContext), command.OrderCreateCommand{Number: string(orderNumber)})
+	_, err = h.OrderService.AddOrder(ginContext.Request.Context(), command.OrderCreateCommand{Number: string(orderNumber)})
 
 	if err != nil {
 		var appErr *errs.AppError
@@ -71,11 +71,4 @@ func (h *OrderHandler) HandleRegisterOrder(ginContext *gin.Context) {
 
 	ginContext.Header("Content-Type", "application/json")
 	ginContext.Writer.WriteHeader(http.StatusAccepted)
-}
-
-func (h *OrderHandler) getContextWithCurrentUser(ginContext *gin.Context) context.Context {
-	rawUserId, _ := ginContext.Get("userId")
-	userId := rawUserId
-	ctx := context.WithValue(ginContext.Request.Context(), "userId", userId)
-	return ctx
 }

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -48,10 +49,8 @@ func AuthMiddleware(jwtSecret string, logger *zap.Logger) gin.HandlerFunc {
 
 		if ok {
 			userId, _ := uuid.Parse(claims["id"].(string))
-			gContext.Set("username", claims["username"])
-			gContext.Set("userId", userId)
+			gContext.Request = gContext.Request.WithContext(context.WithValue(gContext.Request.Context(), "userId", userId))
 		}
-
 		gContext.Next()
 	}
 }
