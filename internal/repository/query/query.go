@@ -23,4 +23,9 @@ const (
 		FROM "order" 
 		WHERE number = $1 FOR UPDATE;
 	`
+	GetAllOrdersByUser = `
+        SELECT id, number, status, accrual, created_at, user_id
+        FROM "order" 
+        WHERE user_id = $1
+        ORDER BY created_at DESC`
 )

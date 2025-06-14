@@ -67,6 +67,7 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 	protected.Use(middleware.AuthMiddleware(app.cfg.JWTSecret, app.logger))
 
 	protected.POST("/api/user/orders", app.orderHandler.HandleRegisterOrder)
+	protected.GET("/api/user/orders", app.orderHandler.HandleGetOrders)
 
 	router.NoRoute(app.commonHandler.HandleUnsupportedRequest)
 

@@ -10,6 +10,7 @@ import (
 
 type IOrderRepository interface {
 	Save(ctx context.Context, order *model.Order) (*model.Order, error)
+	GetAllByUserId(ctx context.Context, userId uuid.UUID) ([]model.Order, error)
 }
 type OrderService struct {
 	OrderRepository IOrderRepository
@@ -38,4 +39,14 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 	}
 
 	return rawOrder, nil
+}
+
+func (s *OrderService) GetOrders(ctx context.Context) ([]model.Order, error) {
+	userId := ctx.Value("userId").(uuid.UUID)
+	orders, err := s.OrderRepository.GetAllByUserId(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return orders, nil
 }

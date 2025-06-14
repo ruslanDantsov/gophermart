@@ -15,6 +15,7 @@ import (
 
 type IOrderService interface {
 	AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*model.Order, error)
+	GetOrders(ctx context.Context) ([]model.Order, error)
 }
 
 type OrderHandler struct {

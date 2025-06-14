@@ -44,17 +44,6 @@ func (r *OrderRepository) Save(ctx context.Context, order *model.Order) (*model.
 		return nil, errs.New(errs.ORDER_ADDED_BY_ANOTHER_USER, "order already added by another user", err)
 	}
 
-	//if err != nil && !errors.Is(err, sql.ErrNoRows) {
-	//	return nil, errs.New(errs.GENERIC, "failed to execute query ", err)
-	//}
-	//
-	//if err == nil {
-	//	if existingUserID == currentUserId {
-	//		return nil, errs.New(errs.ORDER_ADDED_BY_CURRENT_USER, "order already added by current user ", err)
-	//	}
-	//	return nil, errs.New(errs.ORDER_ADDED_BY_ANOTHER_USER, "order already added by another user ", err)
-	//}
-
 	_, err = tx.Exec(ctx,
 		query.InsertOrder,
 		order.ID,
@@ -73,4 +62,38 @@ func (r *OrderRepository) Save(ctx context.Context, order *model.Order) (*model.
 	}
 
 	return order, nil
+}
+
+func (r *OrderRepository) GetAllByUserId(ctx context.Context, userId uuid.UUID) ([]model.Order, error) {
+	var orders []model.Order
+
+	rows, err := r.storage.Conn.Query(ctx, query.GetAllOrdersByUser, userId)
+
+	if err != nil {
+		return nil, errs.New(errs.GENERIC, "failed to execute query ", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var order model.Order
+		err := rows.Scan(
+			&order.ID,
+			&order.Number,
+			&order.Status,
+			&order.Accrual,
+			&order.CreatedAt,
+			&order.UserID,
+		)
+		if err != nil {
+			return nil, errs.New(errs.GENERIC, "failed to scan order ", err)
+		}
+		orders = append(orders, order)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, errs.New(errs.GENERIC, "rows iteration error ", err)
+	}
+
+	return orders, nil
 }
