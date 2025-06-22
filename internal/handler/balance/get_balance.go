@@ -28,7 +28,7 @@ func NewBalanceHandler(log *zap.Logger, balanceService IBalanceService) *Balance
 }
 
 func (h *BalanceHandler) HandleGetBalance(ginContext *gin.Context) {
-	currentUserID := ginContext.Request.Context().Value(middleware.CtxUserIdKey{}).(uuid.UUID)
+	currentUserID := ginContext.Request.Context().Value(middleware.CtxUserIDKey{}).(uuid.UUID)
 	balance, err := h.BalanceService.GetBalance(ginContext.Request.Context(), currentUserID)
 
 	if err != nil {

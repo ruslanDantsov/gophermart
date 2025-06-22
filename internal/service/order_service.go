@@ -13,7 +13,7 @@ import (
 
 type IOrderRepository interface {
 	Save(ctx context.Context, order *entity.Order) (*entity.Order, error)
-	GetAllByUser(ctx context.Context, userId uuid.UUID) ([]entity.Order, error)
+	GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Order, error)
 }
 type OrderService struct {
 	OrderRepository IOrderRepository
@@ -30,7 +30,7 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 		return nil, errs.New(errs.InvalidOrderNumber, "invalid order number", err)
 	}
 
-	userID := ctx.Value(middleware.CtxUserIdKey{}).(uuid.UUID)
+	userID := ctx.Value(middleware.CtxUserIDKey{}).(uuid.UUID)
 
 	rawOrder := &entity.Order{
 		ID:        uuid.New(),

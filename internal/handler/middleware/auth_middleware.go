@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type CtxUserIdKey struct{}
+type CtxUserIDKey struct{}
 
 func AuthMiddleware(jwtSecret string, logger *zap.Logger) gin.HandlerFunc {
 	return func(gContext *gin.Context) {
@@ -51,7 +51,7 @@ func AuthMiddleware(jwtSecret string, logger *zap.Logger) gin.HandlerFunc {
 
 		if ok {
 			userID, _ := uuid.Parse(claims["id"].(string))
-			gContext.Request = gContext.Request.WithContext(context.WithValue(gContext.Request.Context(), CtxUserIdKey{}, userID))
+			gContext.Request = gContext.Request.WithContext(context.WithValue(gContext.Request.Context(), CtxUserIDKey{}, userID))
 		}
 		gContext.Next()
 	}

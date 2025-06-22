@@ -11,7 +11,7 @@ import (
 
 type IWithdrawRepository interface {
 	Save(ctx context.Context, withdraw entity.Withdraw) (*entity.Withdraw, error)
-	GetAllByUser(ctx context.Context, userId uuid.UUID) ([]entity.Withdraw, error)
+	GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Withdraw, error)
 }
 
 type IOrderCreatorService interface {
@@ -55,7 +55,7 @@ func (s *WithdrawService) AddWithdraw(ctx context.Context, withdrawCreateCommand
 }
 
 func (s *WithdrawService) GetWithdraws(ctx context.Context) ([]entity.Withdraw, error) {
-	userID := ctx.Value(middleware.CtxUserIdKey{}).(uuid.UUID)
+	userID := ctx.Value(middleware.CtxUserIDKey{}).(uuid.UUID)
 	withdraws, err := s.WithdrawRepository.GetAllByUser(ctx, userID)
 	if err != nil {
 		return nil, err

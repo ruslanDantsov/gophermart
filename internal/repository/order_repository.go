@@ -21,7 +21,7 @@ func NewOrderRepository(storage *postgre.PostgreStorage) *OrderRepository {
 }
 
 func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entity.Order, error) {
-	currentUserId := ctx.Value(middleware.CtxUserIdKey{})
+	currentUserID := ctx.Value(middleware.CtxUserIDKey{})
 	tx, err := r.storage.Conn.Begin(ctx)
 	if err != nil {
 		return nil, errs.New(errs.Generic, "failed to begin transaction ", err)
@@ -39,7 +39,7 @@ func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entit
 		// Order number is not yet used — proceed to insert
 	case err != nil:
 		return nil, errs.New(errs.Generic, "failed to execute query", err)
-	case existingUserID == currentUserId:
+	case existingUserID == currentUserID:
 		return nil, errs.New(errs.OrderAddedByCurrentUser, "order already added by current user", err)
 	default:
 		return nil, errs.New(errs.OrderAddedByAnotherUser, "order already added by another user", err)
@@ -65,10 +65,10 @@ func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entit
 	return order, nil
 }
 
-func (r *OrderRepository) GetAllByUser(ctx context.Context, userId uuid.UUID) ([]entity.Order, error) {
+func (r *OrderRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Order, error) {
 	var orders []entity.Order
 
-	rows, err := r.storage.Conn.Query(ctx, query.GetAllOrdersByUser, userId)
+	rows, err := r.storage.Conn.Query(ctx, query.GetAllOrdersByUser, userID)
 
 	if err != nil {
 		return nil, errs.New(errs.Generic, "failed to execute query ", err)
