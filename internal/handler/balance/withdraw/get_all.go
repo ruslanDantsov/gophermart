@@ -1,4 +1,4 @@
-package order
+package withdraw
 
 import (
 	"github.com/gin-gonic/gin"
@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-func (h *OrderHandler) HandleGetOrders(ginContext *gin.Context) {
-	orders, err := h.OrderGetterService.GetOrders(ginContext.Request.Context())
+func (h *WithdrawHandler) HandleGetWithdraws(ginContext *gin.Context) {
+	withdraws, err := h.WithdrawGetterService.GetWithdraws(ginContext.Request.Context())
 
 	if err != nil {
 		h.Log.Error(err.Error())
@@ -15,18 +15,17 @@ func (h *OrderHandler) HandleGetOrders(ginContext *gin.Context) {
 		return
 	}
 
-	if len(orders) == 0 {
+	if len(withdraws) == 0 {
 		ginContext.Status(http.StatusNoContent)
 		return
 	}
 
-	viewModels := make([]view.OrderViewModel, len(orders))
-	for i, order := range orders {
-		viewModels[i] = view.OrderViewModel{
-			Number:     order.Number,
-			Status:     order.Status,
-			Accrual:    order.Accrual,
-			UploadedAt: order.CreatedAt,
+	viewModels := make([]view.WithdrawViewModel, len(withdraws))
+	for i, withdraw := range withdraws {
+		viewModels[i] = view.WithdrawViewModel{
+			OrderID:     withdraw.OrderID,
+			Sum:         withdraw.Sum,
+			ProcessedAt: withdraw.CreatedAt,
 		}
 	}
 

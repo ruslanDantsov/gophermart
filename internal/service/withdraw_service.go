@@ -10,6 +10,7 @@ import (
 
 type IWithdrawRepository interface {
 	Save(ctx context.Context, withdraw entity.Withdraw) (*entity.Withdraw, error)
+	GetAllByUser(ctx context.Context, userId uuid.UUID) ([]entity.Withdraw, error)
 }
 
 type IOrderCreatorService interface {
@@ -50,4 +51,14 @@ func (s *WithdrawService) AddWithdraw(ctx context.Context, withdrawCreateCommand
 	}
 
 	return withdraw, nil
+}
+
+func (s *WithdrawService) GetWithdraws(ctx context.Context) ([]entity.Withdraw, error) {
+	userId := ctx.Value("userId").(uuid.UUID)
+	withdraws, err := s.WithdrawRepository.GetAllByUser(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return withdraws, nil
 }

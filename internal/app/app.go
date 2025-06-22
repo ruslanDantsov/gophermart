@@ -52,7 +52,7 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 
 	withdrawRepository := repository.NewWithdrawnRepository(storage)
 	withdrawService := service.NewWithdrawService(orderService, withdrawRepository)
-	withdrawHandler := withdraw.NewWithdrawHandler(log, withdrawService)
+	withdrawHandler := withdraw.NewWithdrawHandler(log, withdrawService, withdrawService)
 
 	balanceService := service.NewBalanceService(orderRepository, withdrawRepository)
 	balanceHandler := balance.NewBalanceHandler(log, balanceService)
@@ -84,7 +84,8 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 
 	protected.GET("/api/user/balance", app.balanceHandler.HandleGetBalance)
 
-	protected.POST("/api/user/balance/withdraw", app.withdrawHandler.HandleWithdraw)
+	protected.POST("/api/user/balance/withdraw", app.withdrawHandler.HandleAddingWithdraw)
+	protected.GET("/api/user/withdraws", app.withdrawHandler.HandleGetWithdraws)
 
 	router.NoRoute(app.commonHandler.HandleUnsupportedRequest)
 

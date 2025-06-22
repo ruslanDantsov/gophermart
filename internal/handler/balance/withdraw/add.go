@@ -12,22 +12,28 @@ import (
 	"net/http"
 )
 
-type IWithdrawService interface {
+type IWithdrawCreatorService interface {
 	AddWithdraw(ctx context.Context, withdrawCreateCommand command.WithdrawCreateCommand) (*entity.Withdraw, error)
 }
 
-type WithdrawHandler struct {
-	Log             zap.Logger
-	WithdrawService IWithdrawService
+type IWithdrawGetterService interface {
+	GetWithdraws(ctx context.Context) ([]entity.Withdraw, error)
 }
 
-func NewWithdrawHandler(log *zap.Logger, withdrawService IWithdrawService) *WithdrawHandler {
+type WithdrawHandler struct {
+	Log                    zap.Logger
+	WithdrawCreatorService IWithdrawCreatorService
+	WithdrawGetterService  IWithdrawGetterService
+}
+
+func NewWithdrawHandler(log *zap.Logger, withdrawCreatorService IWithdrawCreatorService, withdrawGetterService IWithdrawGetterService) *WithdrawHandler {
 	return &WithdrawHandler{
-		Log:             *log,
-		WithdrawService: withdrawService,
+		Log:                    *log,
+		WithdrawCreatorService: withdrawCreatorService,
+		WithdrawGetterService:  withdrawGetterService,
 	}
 }
-func (h *WithdrawHandler) HandleWithdraw(ginContext *gin.Context) {
+func (h *WithdrawHandler) HandleAddingWithdraw(ginContext *gin.Context) {
 	contentType := ginContext.GetHeader("Content-Type")
 	if contentType != "application/json" {
 		h.Log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
@@ -43,7 +49,7 @@ func (h *WithdrawHandler) HandleWithdraw(ginContext *gin.Context) {
 		return
 	}
 
-	_, err := h.WithdrawService.AddWithdraw(ginContext.Request.Context(), withdrawCreateCommand)
+	_, err := h.WithdrawCreatorService.AddWithdraw(ginContext.Request.Context(), withdrawCreateCommand)
 	//TODO: 402 — на счету недостаточно средств;
 	if err != nil {
 		var appErr *errs.AppError

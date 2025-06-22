@@ -33,4 +33,12 @@ const (
 		INSERT INTO withdraw (id, sum, created_at, order_id)
 		VALUES ($1, $2, $3, $4);
 	`
+
+	GetAllWithdrawsByUser = `
+        SELECT w.id, w.sum, w.created_at, w.order_id
+        FROM withdraw w
+        INNER JOIN "order" o ON w.order_id = o.id
+        INNER JOIN user_data u ON o.user_id = u.id
+        WHERE u.id = $1
+        ORDER BY w.created_at DESC`
 )
