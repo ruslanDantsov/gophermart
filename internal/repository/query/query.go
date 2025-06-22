@@ -28,4 +28,9 @@ const (
         FROM "order" 
         WHERE user_id = $1
         ORDER BY created_at DESC`
+
+	InsertWithdraw = `
+		INSERT INTO withdraw (id, sum, created_at, order_id)
+		VALUES ($1, $2, $3, $4);
+	`
 )

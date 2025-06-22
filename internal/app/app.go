@@ -8,6 +8,7 @@ import (
 	"github.com/ruslanDantsov/gophermart/internal/config"
 	"github.com/ruslanDantsov/gophermart/internal/handler"
 	"github.com/ruslanDantsov/gophermart/internal/handler/balance"
+	"github.com/ruslanDantsov/gophermart/internal/handler/balance/withdraw"
 	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
 	"github.com/ruslanDantsov/gophermart/internal/handler/order"
 	"github.com/ruslanDantsov/gophermart/internal/handler/user"
@@ -20,13 +21,14 @@ import (
 )
 
 type GophermartApp struct {
-	cfg            *config.Config
-	logger         *zap.Logger
-	storage        *postgre.PostgreStorage
-	commonHandler  *handler.CommonHandler
-	userHandler    *user.UserHandler
-	orderHandler   *order.OrderHandler
-	balanceHandler *balance.BalanceHandler
+	cfg             *config.Config
+	logger          *zap.Logger
+	storage         *postgre.PostgreStorage
+	commonHandler   *handler.CommonHandler
+	userHandler     *user.UserHandler
+	orderHandler    *order.OrderHandler
+	balanceHandler  *balance.BalanceHandler
+	withdrawHandler *withdraw.WithdrawHandler
 }
 
 func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) (*GophermartApp, error) {
@@ -46,20 +48,24 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 
 	orderRepository := repository.NewOrderRepository(storage)
 	orderService := service.NewOrderService(orderRepository)
-	orderHandler := order.NewOrderHandler(log, orderService)
+	orderHandler := order.NewOrderHandler(log, orderService, orderService)
 
-	withdrawnRepository := repository.NewWithdrawnRepository(storage)
-	balanceService := service.NewBalanceService(orderRepository, withdrawnRepository)
+	withdrawRepository := repository.NewWithdrawnRepository(storage)
+	withdrawService := service.NewWithdrawService(orderService, withdrawRepository)
+	withdrawHandler := withdraw.NewWithdrawHandler(log, withdrawService)
+
+	balanceService := service.NewBalanceService(orderRepository, withdrawRepository)
 	balanceHandler := balance.NewBalanceHandler(log, balanceService)
 
 	return &GophermartApp{
-		cfg:            cfg,
-		logger:         log,
-		storage:        storage,
-		commonHandler:  commonHandler,
-		userHandler:    userHandler,
-		orderHandler:   orderHandler,
-		balanceHandler: balanceHandler,
+		cfg:             cfg,
+		logger:          log,
+		storage:         storage,
+		commonHandler:   commonHandler,
+		userHandler:     userHandler,
+		orderHandler:    orderHandler,
+		balanceHandler:  balanceHandler,
+		withdrawHandler: withdrawHandler,
 	}, nil
 }
 
@@ -77,6 +83,8 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 	protected.GET("/api/user/orders", app.orderHandler.HandleGetOrders)
 
 	protected.GET("/api/user/balance", app.balanceHandler.HandleGetBalance)
+
+	protected.POST("/api/user/balance/withdraw", app.withdrawHandler.HandleWithdraw)
 
 	router.NoRoute(app.commonHandler.HandleUnsupportedRequest)
 

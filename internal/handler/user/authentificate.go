@@ -11,6 +11,8 @@ import (
 )
 
 func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
+	//TODO: check for content type
+
 	var authCommand command.UserAuthCommand
 
 	if err := ginContext.ShouldBindJSON(&authCommand); err != nil {

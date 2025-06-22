@@ -1,4 +1,4 @@
-package order
+package withdraw
 
 import (
 	"context"
@@ -12,46 +12,39 @@ import (
 	"net/http"
 )
 
-type IOrderCreatorService interface {
-	AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*entity.Order, error)
+type IWithdrawService interface {
+	AddWithdraw(ctx context.Context, withdrawCreateCommand command.WithdrawCreateCommand) (*entity.Withdraw, error)
 }
 
-type IOrderGetterService interface {
-	GetOrders(ctx context.Context) ([]entity.Order, error)
+type WithdrawHandler struct {
+	Log             zap.Logger
+	WithdrawService IWithdrawService
 }
 
-type OrderHandler struct {
-	Log                 zap.Logger
-	OrderCreatorService IOrderCreatorService
-	OrderGetterService  IOrderGetterService
-}
-
-func NewOrderHandler(log *zap.Logger, orderCreatorService IOrderCreatorService, orderGetterService IOrderGetterService) *OrderHandler {
-	return &OrderHandler{
-		Log:                 *log,
-		OrderCreatorService: orderCreatorService,
-		OrderGetterService:  orderGetterService,
+func NewWithdrawHandler(log *zap.Logger, withdrawService IWithdrawService) *WithdrawHandler {
+	return &WithdrawHandler{
+		Log:             *log,
+		WithdrawService: withdrawService,
 	}
 }
-
-func (h *OrderHandler) HandleRegisterOrder(ginContext *gin.Context) {
+func (h *WithdrawHandler) HandleWithdraw(ginContext *gin.Context) {
 	contentType := ginContext.GetHeader("Content-Type")
-	if contentType != "text/plain" {
+	if contentType != "application/json" {
 		h.Log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported content type"})
 		return
 	}
 
-	orderNumber, err := ginContext.GetRawData()
+	var withdrawCreateCommand command.WithdrawCreateCommand
 
-	if err != nil {
-		h.Log.Error(fmt.Sprintf("Invalid request body: %s ", err.Error()))
+	if err := ginContext.ShouldBindJSON(&withdrawCreateCommand); err != nil {
+		h.Log.Error(fmt.Sprintf("Invalid JSON: %s", err.Error()))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
-	_, err = h.OrderCreatorService.AddOrder(ginContext.Request.Context(), command.OrderCreateCommand{Number: string(orderNumber)})
-
+	_, err := h.WithdrawService.AddWithdraw(ginContext.Request.Context(), withdrawCreateCommand)
+	//TODO: 402 — на счету недостаточно средств;
 	if err != nil {
 		var appErr *errs.AppError
 		if errors.As(err, &appErr) {
@@ -68,8 +61,11 @@ func (h *OrderHandler) HandleRegisterOrder(ginContext *gin.Context) {
 			h.Log.Error(fmt.Sprintf(appErr.Message+", description: %s ", err.Error()))
 			return
 		}
+
+		h.Log.Error(fmt.Sprintf("Unexpected error: %s", err.Error()))
+		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
 	}
 
-	ginContext.Header("Content-Type", "application/json")
-	ginContext.Writer.WriteHeader(http.StatusAccepted)
+	ginContext.Status(http.StatusOK)
 }

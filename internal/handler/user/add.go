@@ -41,6 +41,8 @@ func NewUserHandler(log *zap.Logger, userService IUserService, authService IAuth
 }
 
 func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
+	//TODO: check for content type
+
 	var userCreateCommand command.UserCreateCommand
 	if err := ginContext.ShouldBindJSON(&userCreateCommand); err != nil {
 		var ve validator.ValidationErrors

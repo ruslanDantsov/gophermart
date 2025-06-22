@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"github.com/ShiraazMoollatjie/goluhn"
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
+	"github.com/ruslanDantsov/gophermart/internal/errs"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"time"
 )
@@ -23,6 +25,10 @@ func NewOrderService(orderRepository IOrderRepository) *OrderService {
 }
 
 func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*entity.Order, error) {
+	if err := goluhn.Validate(orderCreateCommand.Number); err != nil {
+		return nil, errs.New(errs.INVALID_ORDER_NUMBER, "invalid order number", err)
+	}
+
 	userId := ctx.Value("userId").(uuid.UUID)
 
 	rawOrder := &entity.Order{

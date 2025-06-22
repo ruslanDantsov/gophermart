@@ -4,11 +4,37 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
 )
+
+//func (r *OrderRepository) getExecer(ctx context.Context) (postgre.Execer, error) {
+//	tx := r.Storage.GetTx(ctx)
+//
+//	var execer postgre.Execer
+//	if tx != nil {
+//		execer = tx
+//	} else {
+//		conn, err := r.Storage.Conn.Acquire(ctx)
+//		if err != nil {
+//			return nil, err
+//		}
+//		defer conn.Release()
+//		execer = conn
+//	}
+//	return execer, nil
+//
+//}
+
+type Execer interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
 
 type PostgreStorage struct {
 	Conn *pgxpool.Pool
@@ -30,6 +56,36 @@ func NewPostgreStorage(ctx context.Context, log *zap.Logger, connectionString st
 		Conn: conn,
 		Log:  *log,
 	}, nil
+}
+
+type ctxTxKey struct{}
+
+func (ps *PostgreStorage) GetTx(ctx context.Context) pgx.Tx {
+	tx, _ := ctx.Value(ctxTxKey{}).(pgx.Tx)
+	return tx
+}
+
+func (ps *PostgreStorage) WithTx(ctx context.Context, fn func(ctx context.Context) error) error {
+	tx, err := ps.Conn.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to start tx: %w", err)
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback(ctx)
+			panic(p)
+		}
+	}()
+
+	txCtx := context.WithValue(ctx, ctxTxKey{}, tx)
+
+	if err := fn(txCtx); err != nil {
+		_ = tx.Rollback(ctx)
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func applyMigrations(connectionString string) error {

@@ -7,8 +7,9 @@ import (
 )
 
 func (h *OrderHandler) HandleGetOrders(ginContext *gin.Context) {
+	//TODO: check for content type
 
-	orders, err := h.OrderService.GetOrders(ginContext.Request.Context())
+	orders, err := h.OrderGetterService.GetOrders(ginContext.Request.Context())
 
 	if err != nil {
 		h.Log.Error(err.Error())
