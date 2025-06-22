@@ -48,7 +48,7 @@ func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
 		return
 	}
 
-	ginContext.Header("Authorization", "Bearer "+tokenResult.AccessToken)
+	ginContext.Header("Authorization", tokenResult.AccessToken)
 
 	ginContext.JSON(http.StatusOK, gin.H{
 		"access_token": tokenResult.AccessToken,
