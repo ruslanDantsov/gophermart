@@ -8,14 +8,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
-	"github.com/ruslanDantsov/gophermart/internal/model"
+	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"go.uber.org/zap"
 	"net/http"
 )
 
 type IOrderService interface {
-	AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*model.Order, error)
-	GetOrders(ctx context.Context) ([]model.Order, error)
+	AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*entity.Order, error)
+	GetOrders(ctx context.Context) ([]entity.Order, error)
 }
 
 type OrderHandler struct {

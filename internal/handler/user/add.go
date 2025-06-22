@@ -10,7 +10,7 @@ import (
 	"github.com/mailru/easyjson"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"github.com/ruslanDantsov/gophermart/internal/dto/view"
-	"github.com/ruslanDantsov/gophermart/internal/model"
+	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"github.com/ruslanDantsov/gophermart/internal/service"
 	"go.uber.org/zap"
 	"net/http"
@@ -18,8 +18,8 @@ import (
 )
 
 type IUserService interface {
-	AddUser(ctx context.Context, userCreateCommand command.UserCreateCommand) (*model.UserData, error)
-	FindByLoginAndPassword(ctx context.Context, login string, password string) (*model.UserData, error)
+	AddUser(ctx context.Context, userCreateCommand command.UserCreateCommand) (*entity.UserData, error)
+	FindByLoginAndPassword(ctx context.Context, login string, password string) (*entity.UserData, error)
 }
 
 type IAuthUtils interface {

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ruslanDantsov/gophermart/internal/config"
 	"github.com/ruslanDantsov/gophermart/internal/handler"
+	"github.com/ruslanDantsov/gophermart/internal/handler/balance"
 	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
 	"github.com/ruslanDantsov/gophermart/internal/handler/order"
 	"github.com/ruslanDantsov/gophermart/internal/handler/user"
@@ -19,12 +20,13 @@ import (
 )
 
 type GophermartApp struct {
-	cfg           *config.Config
-	logger        *zap.Logger
-	storage       *postgre.PostgreStorage
-	commonHandler *handler.CommonHandler
-	userHandler   *user.UserHandler
-	orderHandler  *order.OrderHandler
+	cfg            *config.Config
+	logger         *zap.Logger
+	storage        *postgre.PostgreStorage
+	commonHandler  *handler.CommonHandler
+	userHandler    *user.UserHandler
+	orderHandler   *order.OrderHandler
+	balanceHandler *balance.BalanceHandler
 }
 
 func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) (*GophermartApp, error) {
@@ -46,13 +48,18 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 	orderService := service.NewOrderService(orderRepository)
 	orderHandler := order.NewOrderHandler(log, orderService)
 
+	withdrawnRepository := repository.NewWithdrawnRepository(storage)
+	balanceService := service.NewBalanceService(orderRepository, withdrawnRepository)
+	balanceHandler := balance.NewBalanceHandler(log, balanceService)
+
 	return &GophermartApp{
-		cfg:           cfg,
-		logger:        log,
-		storage:       storage,
-		commonHandler: commonHandler,
-		userHandler:   userHandler,
-		orderHandler:  orderHandler,
+		cfg:            cfg,
+		logger:         log,
+		storage:        storage,
+		commonHandler:  commonHandler,
+		userHandler:    userHandler,
+		orderHandler:   orderHandler,
+		balanceHandler: balanceHandler,
 	}, nil
 }
 
@@ -68,6 +75,8 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 
 	protected.POST("/api/user/orders", app.orderHandler.HandleRegisterOrder)
 	protected.GET("/api/user/orders", app.orderHandler.HandleGetOrders)
+
+	protected.GET("/api/user/balance", app.balanceHandler.HandleGetBalance)
 
 	router.NoRoute(app.commonHandler.HandleUnsupportedRequest)
 

@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/ruslanDantsov/gophermart/internal/infrastructure/storage/postgre"
-	"github.com/ruslanDantsov/gophermart/internal/model"
+	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"github.com/ruslanDantsov/gophermart/internal/repository/query"
 	"time"
 )
@@ -21,7 +21,7 @@ func NewUserRepository(storage *postgre.PostgreStorage) *UserRepository {
 	return &UserRepository{storage: storage}
 }
 
-func (r *UserRepository) Save(ctx context.Context, userData model.UserData) error {
+func (r *UserRepository) Save(ctx context.Context, userData entity.UserData) error {
 
 	_, err := r.storage.Conn.Exec(ctx,
 		query.InsertOrUpdateUserData,
@@ -46,7 +46,7 @@ func (r *UserRepository) Save(ctx context.Context, userData model.UserData) erro
 	return nil
 }
 
-func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*model.UserData, error) {
+func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*entity.UserData, error) {
 	var (
 		existingID        uuid.UUID
 		existingLogin     string
@@ -73,7 +73,7 @@ func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*model.
 		}
 	}
 
-	userData := &model.UserData{
+	userData := &entity.UserData{
 		ID:        existingID,
 		Login:     existingLogin,
 		Password:  existingPassword,

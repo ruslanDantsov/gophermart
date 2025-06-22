@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
 	"github.com/ruslanDantsov/gophermart/internal/infrastructure/storage/postgre"
-	"github.com/ruslanDantsov/gophermart/internal/model"
+	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"github.com/ruslanDantsov/gophermart/internal/repository/query"
 )
 
@@ -19,7 +19,7 @@ func NewOrderRepository(storage *postgre.PostgreStorage) *OrderRepository {
 	return &OrderRepository{storage: storage}
 }
 
-func (r *OrderRepository) Save(ctx context.Context, order *model.Order) (*model.Order, error) {
+func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entity.Order, error) {
 	currentUserId := ctx.Value("userId")
 	tx, err := r.storage.Conn.Begin(ctx)
 	if err != nil {
@@ -64,8 +64,8 @@ func (r *OrderRepository) Save(ctx context.Context, order *model.Order) (*model.
 	return order, nil
 }
 
-func (r *OrderRepository) GetAllByUserId(ctx context.Context, userId uuid.UUID) ([]model.Order, error) {
-	var orders []model.Order
+func (r *OrderRepository) GetAllByUser(ctx context.Context, userId uuid.UUID) ([]entity.Order, error) {
+	var orders []entity.Order
 
 	rows, err := r.storage.Conn.Query(ctx, query.GetAllOrdersByUser, userId)
 
@@ -76,7 +76,7 @@ func (r *OrderRepository) GetAllByUserId(ctx context.Context, userId uuid.UUID) 
 	defer rows.Close()
 
 	for rows.Next() {
-		var order model.Order
+		var order entity.Order
 		err := rows.Scan(
 			&order.ID,
 			&order.Number,
@@ -96,4 +96,9 @@ func (r *OrderRepository) GetAllByUserId(ctx context.Context, userId uuid.UUID) 
 	}
 
 	return orders, nil
+}
+
+func (r *OrderRepository) GetTotalAccrualByUser(ctx context.Context, userID uuid.UUID) (float64, error) {
+	//TODO: Implement logic
+	return 0, nil
 }

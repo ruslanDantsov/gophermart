@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
-	"github.com/ruslanDantsov/gophermart/internal/model"
+	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"testing"
 	"time"
 
@@ -19,17 +19,17 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) Save(ctx context.Context, userData model.UserData) error {
+func (m *MockUserRepository) Save(ctx context.Context, userData entity.UserData) error {
 	args := m.Called(ctx, userData)
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) FindByLogin(ctx context.Context, login string) (*model.UserData, error) {
+func (m *MockUserRepository) FindByLogin(ctx context.Context, login string) (*entity.UserData, error) {
 	args := m.Called(ctx, login)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*model.UserData), args.Error(1)
+	return args.Get(0).(*entity.UserData), args.Error(1)
 }
 
 type MockPasswordService struct {
@@ -55,7 +55,7 @@ func TestUserService_AddUser_Success(t *testing.T) {
 
 	passwordService.On("Hash", "password123").Return("hashed123", nil)
 
-	repo.On("Save", mock.Anything, mock.MatchedBy(func(user model.UserData) bool {
+	repo.On("Save", mock.Anything, mock.MatchedBy(func(user entity.UserData) bool {
 		return user.Login == "testuser" && user.Password == "hashed123"
 	})).Return(nil)
 
@@ -101,7 +101,7 @@ func TestUserService_FindByLoginAndPassword_Success(t *testing.T) {
 	repo := new(MockUserRepository)
 	passwordService := new(MockPasswordService)
 
-	user := &model.UserData{
+	user := &entity.UserData{
 		ID:        uuid.New(),
 		Login:     "testuser",
 		Password:  "hashed123",
@@ -143,7 +143,7 @@ func TestUserService_FindByLoginAndPassword_InvalidPassword(t *testing.T) {
 	repo := new(MockUserRepository)
 	passwordService := new(MockPasswordService)
 
-	user := &model.UserData{
+	user := &entity.UserData{
 		ID:        uuid.New(),
 		Login:     "testuser",
 		Password:  "hashed123",

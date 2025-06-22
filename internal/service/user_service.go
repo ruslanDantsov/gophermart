@@ -5,13 +5,13 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
-	"github.com/ruslanDantsov/gophermart/internal/model"
+	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"time"
 )
 
 type IUserRepository interface {
-	Save(ctx context.Context, userData model.UserData) error
-	FindByLogin(ctx context.Context, login string) (*model.UserData, error)
+	Save(ctx context.Context, userData entity.UserData) error
+	FindByLogin(ctx context.Context, login string) (*entity.UserData, error)
 }
 
 type IPasswordService interface {
@@ -31,13 +31,13 @@ func NewUserService(userRepository IUserRepository, passwordService IPasswordSer
 	}
 }
 
-func (s *UserService) AddUser(ctx context.Context, userCreateCommand command.UserCreateCommand) (*model.UserData, error) {
+func (s *UserService) AddUser(ctx context.Context, userCreateCommand command.UserCreateCommand) (*entity.UserData, error) {
 	hashedPassword, err := s.PasswordService.Hash(userCreateCommand.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	rawUserData := model.UserData{
+	rawUserData := entity.UserData{
 		ID:        uuid.New(),
 		Login:     userCreateCommand.Login,
 		Password:  hashedPassword,
@@ -51,7 +51,7 @@ func (s *UserService) AddUser(ctx context.Context, userCreateCommand command.Use
 	return &rawUserData, nil
 }
 
-func (s *UserService) FindByLoginAndPassword(ctx context.Context, login string, password string) (*model.UserData, error) {
+func (s *UserService) FindByLoginAndPassword(ctx context.Context, login string, password string) (*entity.UserData, error) {
 	userData, err := s.UserRepository.FindByLogin(ctx, login)
 	if err != nil {
 		return nil, err

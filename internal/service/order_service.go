@@ -4,13 +4,13 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
-	"github.com/ruslanDantsov/gophermart/internal/model"
+	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"time"
 )
 
 type IOrderRepository interface {
-	Save(ctx context.Context, order *model.Order) (*model.Order, error)
-	GetAllByUserId(ctx context.Context, userId uuid.UUID) ([]model.Order, error)
+	Save(ctx context.Context, order *entity.Order) (*entity.Order, error)
+	GetAllByUser(ctx context.Context, userId uuid.UUID) ([]entity.Order, error)
 }
 type OrderService struct {
 	OrderRepository IOrderRepository
@@ -22,13 +22,13 @@ func NewOrderService(orderRepository IOrderRepository) *OrderService {
 	}
 }
 
-func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*model.Order, error) {
+func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*entity.Order, error) {
 	userId := ctx.Value("userId").(uuid.UUID)
 
-	rawOrder := &model.Order{
+	rawOrder := &entity.Order{
 		ID:        uuid.New(),
 		Number:    orderCreateCommand.Number,
-		Status:    model.ORDER_NEW_STATUS,
+		Status:    entity.ORDER_NEW_STATUS,
 		Accrual:   0,
 		CreatedAt: time.Now(),
 		UserID:    userId,
@@ -41,9 +41,9 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 	return rawOrder, nil
 }
 
-func (s *OrderService) GetOrders(ctx context.Context) ([]model.Order, error) {
+func (s *OrderService) GetOrders(ctx context.Context) ([]entity.Order, error) {
 	userId := ctx.Value("userId").(uuid.UUID)
-	orders, err := s.OrderRepository.GetAllByUserId(ctx, userId)
+	orders, err := s.OrderRepository.GetAllByUser(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
