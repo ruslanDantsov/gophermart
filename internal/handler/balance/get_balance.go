@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/view"
+	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
 	"github.com/ruslanDantsov/gophermart/internal/model/business"
 	"go.uber.org/zap"
 	"net/http"
@@ -27,8 +28,8 @@ func NewBalanceHandler(log *zap.Logger, balanceService IBalanceService) *Balance
 }
 
 func (h *BalanceHandler) HandleGetBalance(ginContext *gin.Context) {
-	currentUserId := ginContext.Request.Context().Value("userId").(uuid.UUID)
-	balance, err := h.BalanceService.GetBalance(ginContext.Request.Context(), currentUserId)
+	currentUserID := ginContext.Request.Context().Value(middleware.CtxUserIdKey{}).(uuid.UUID)
+	balance, err := h.BalanceService.GetBalance(ginContext.Request.Context(), currentUserID)
 
 	if err != nil {
 		h.Log.Error(err.Error())

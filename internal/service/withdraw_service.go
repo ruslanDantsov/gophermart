@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
+	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"time"
 )
@@ -54,8 +55,8 @@ func (s *WithdrawService) AddWithdraw(ctx context.Context, withdrawCreateCommand
 }
 
 func (s *WithdrawService) GetWithdraws(ctx context.Context) ([]entity.Withdraw, error) {
-	userId := ctx.Value("userId").(uuid.UUID)
-	withdraws, err := s.WithdrawRepository.GetAllByUser(ctx, userId)
+	userID := ctx.Value(middleware.CtxUserIdKey{}).(uuid.UUID)
+	withdraws, err := s.WithdrawRepository.GetAllByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

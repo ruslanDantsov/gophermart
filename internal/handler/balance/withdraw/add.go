@@ -55,11 +55,11 @@ func (h *WithdrawHandler) HandleAddingWithdraw(ginContext *gin.Context) {
 		var appErr *errs.AppError
 		if errors.As(err, &appErr) {
 			switch appErr.Code {
-			case errs.ORDER_ADDED_BY_CURRENT_USER:
+			case errs.OrderAddedByCurrentUser:
 				ginContext.Writer.WriteHeader(http.StatusOK)
-			case errs.ORDER_ADDED_BY_ANOTHER_USER:
+			case errs.OrderAddedByAnotherUser:
 				ginContext.Writer.WriteHeader(http.StatusConflict)
-			case errs.INVALID_ORDER_NUMBER:
+			case errs.InvalidOrderNumber:
 				ginContext.JSON(http.StatusUnprocessableEntity, gin.H{"error": appErr.Message})
 			default:
 				ginContext.JSON(http.StatusInternalServerError, gin.H{"error": appErr.Message})

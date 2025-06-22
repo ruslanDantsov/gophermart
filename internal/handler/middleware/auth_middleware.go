@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+type CtxUserIdKey struct{}
+
 func AuthMiddleware(jwtSecret string, logger *zap.Logger) gin.HandlerFunc {
 	return func(gContext *gin.Context) {
 		authHeader := gContext.GetHeader("Authorization")
@@ -48,8 +50,8 @@ func AuthMiddleware(jwtSecret string, logger *zap.Logger) gin.HandlerFunc {
 		}
 
 		if ok {
-			userId, _ := uuid.Parse(claims["id"].(string))
-			gContext.Request = gContext.Request.WithContext(context.WithValue(gContext.Request.Context(), "userId", userId))
+			userID, _ := uuid.Parse(claims["id"].(string))
+			gContext.Request = gContext.Request.WithContext(context.WithValue(gContext.Request.Context(), CtxUserIdKey{}, userID))
 		}
 		gContext.Next()
 	}

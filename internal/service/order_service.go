@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
+	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"time"
 )
@@ -26,18 +27,18 @@ func NewOrderService(orderRepository IOrderRepository) *OrderService {
 
 func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*entity.Order, error) {
 	if err := goluhn.Validate(orderCreateCommand.Number); err != nil {
-		return nil, errs.New(errs.INVALID_ORDER_NUMBER, "invalid order number", err)
+		return nil, errs.New(errs.InvalidOrderNumber, "invalid order number", err)
 	}
 
-	userId := ctx.Value("userId").(uuid.UUID)
+	userID := ctx.Value(middleware.CtxUserIdKey{}).(uuid.UUID)
 
 	rawOrder := &entity.Order{
 		ID:        uuid.New(),
 		Number:    orderCreateCommand.Number,
-		Status:    entity.ORDER_NEW_STATUS,
+		Status:    entity.OrderNewStatus,
 		Accrual:   0,
 		CreatedAt: time.Now(),
-		UserID:    userId,
+		UserID:    userID,
 	}
 
 	if _, err := s.OrderRepository.Save(ctx, rawOrder); err != nil {
@@ -48,8 +49,8 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 }
 
 func (s *OrderService) GetOrders(ctx context.Context) ([]entity.Order, error) {
-	userId := ctx.Value("userId").(uuid.UUID)
-	orders, err := s.OrderRepository.GetAllByUser(ctx, userId)
+	userID := ctx.Value("userId").(uuid.UUID)
+	orders, err := s.OrderRepository.GetAllByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

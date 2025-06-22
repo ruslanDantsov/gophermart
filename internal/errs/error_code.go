@@ -1,8 +1,8 @@
 package errs
 
 const (
-	GENERIC                     = "GENERIC"
-	ORDER_ADDED_BY_CURRENT_USER = "ORDER_ADDED_BY_CURRENT_USER"
-	ORDER_ADDED_BY_ANOTHER_USER = "ORDER_ADDED_BY_ANOTHER_USER"
-	INVALID_ORDER_NUMBER        = "INVALID_ORDER_NUMBER"
+	Generic                 = "Generic"
+	OrderAddedByCurrentUser = "Order Added By Current User"
+	OrderAddedByAnotherUser = "Order Added By Another User"
+	InvalidOrderNumber      = "Invalid Order Number"
 )

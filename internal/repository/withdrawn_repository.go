@@ -31,19 +31,19 @@ func (r *WithdrawnRepository) Save(ctx context.Context, withdraw entity.Withdraw
 		withdraw.OrderID)
 
 	if err != nil {
-		return nil, errs.New(errs.GENERIC, "failed to execute query ", err)
+		return nil, errs.New(errs.Generic, "failed to execute query ", err)
 	}
 
 	return &withdraw, nil
 }
 
-func (r *WithdrawnRepository) GetAllByUser(ctx context.Context, userId uuid.UUID) ([]entity.Withdraw, error) {
+func (r *WithdrawnRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Withdraw, error) {
 	var withdraws []entity.Withdraw
 
-	rows, err := r.storage.Conn.Query(ctx, query.GetAllWithdrawsByUser, userId)
+	rows, err := r.storage.Conn.Query(ctx, query.GetAllWithdrawsByUser, userID)
 
 	if err != nil {
-		return nil, errs.New(errs.GENERIC, "failed to execute query ", err)
+		return nil, errs.New(errs.Generic, "failed to execute query ", err)
 	}
 
 	defer rows.Close()
@@ -57,13 +57,13 @@ func (r *WithdrawnRepository) GetAllByUser(ctx context.Context, userId uuid.UUID
 			&withdraw.OrderID,
 		)
 		if err != nil {
-			return nil, errs.New(errs.GENERIC, "failed to scan withdraws ", err)
+			return nil, errs.New(errs.Generic, "failed to scan withdraws ", err)
 		}
 		withdraws = append(withdraws, withdraw)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, errs.New(errs.GENERIC, "rows iteration error ", err)
+		return nil, errs.New(errs.Generic, "rows iteration error ", err)
 	}
 
 	return withdraws, nil

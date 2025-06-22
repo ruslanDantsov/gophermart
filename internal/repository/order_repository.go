@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
+	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
 	"github.com/ruslanDantsov/gophermart/internal/infrastructure/storage/postgre"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"github.com/ruslanDantsov/gophermart/internal/repository/query"
@@ -20,10 +21,10 @@ func NewOrderRepository(storage *postgre.PostgreStorage) *OrderRepository {
 }
 
 func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entity.Order, error) {
-	currentUserId := ctx.Value("userId")
+	currentUserId := ctx.Value(middleware.CtxUserIdKey{})
 	tx, err := r.storage.Conn.Begin(ctx)
 	if err != nil {
-		return nil, errs.New(errs.GENERIC, "failed to begin transaction ", err)
+		return nil, errs.New(errs.Generic, "failed to begin transaction ", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -37,11 +38,11 @@ func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entit
 	case errors.Is(err, sql.ErrNoRows):
 		// Order number is not yet used — proceed to insert
 	case err != nil:
-		return nil, errs.New(errs.GENERIC, "failed to execute query", err)
+		return nil, errs.New(errs.Generic, "failed to execute query", err)
 	case existingUserID == currentUserId:
-		return nil, errs.New(errs.ORDER_ADDED_BY_CURRENT_USER, "order already added by current user", err)
+		return nil, errs.New(errs.OrderAddedByCurrentUser, "order already added by current user", err)
 	default:
-		return nil, errs.New(errs.ORDER_ADDED_BY_ANOTHER_USER, "order already added by another user", err)
+		return nil, errs.New(errs.OrderAddedByAnotherUser, "order already added by another user", err)
 	}
 
 	_, err = tx.Exec(ctx,
@@ -54,11 +55,11 @@ func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entit
 		order.UserID)
 
 	if err != nil {
-		return nil, errs.New(errs.GENERIC, "failed to execute query ", err)
+		return nil, errs.New(errs.Generic, "failed to execute query ", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return nil, errs.New(errs.GENERIC, "failed to commit transaction ", err)
+		return nil, errs.New(errs.Generic, "failed to commit transaction ", err)
 	}
 
 	return order, nil
@@ -70,7 +71,7 @@ func (r *OrderRepository) GetAllByUser(ctx context.Context, userId uuid.UUID) ([
 	rows, err := r.storage.Conn.Query(ctx, query.GetAllOrdersByUser, userId)
 
 	if err != nil {
-		return nil, errs.New(errs.GENERIC, "failed to execute query ", err)
+		return nil, errs.New(errs.Generic, "failed to execute query ", err)
 	}
 
 	defer rows.Close()
@@ -86,13 +87,13 @@ func (r *OrderRepository) GetAllByUser(ctx context.Context, userId uuid.UUID) ([
 			&order.UserID,
 		)
 		if err != nil {
-			return nil, errs.New(errs.GENERIC, "failed to scan order ", err)
+			return nil, errs.New(errs.Generic, "failed to scan order ", err)
 		}
 		orders = append(orders, order)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, errs.New(errs.GENERIC, "rows iteration error ", err)
+		return nil, errs.New(errs.Generic, "rows iteration error ", err)
 	}
 
 	return orders, nil

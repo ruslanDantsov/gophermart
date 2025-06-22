@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	ORDER_NEW_STATUS        = "NEW"
-	ORDER_PROCESSING_STATUS = "PROCESSING"
+	OrderNewStatus        = "NEW"
+	OrderProcessingStatus = "PROCESSING"
 )
 
 type Order struct {
