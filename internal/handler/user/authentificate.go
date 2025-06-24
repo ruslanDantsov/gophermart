@@ -51,8 +51,9 @@ func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
 	ginContext.Header("Authorization", tokenResult.AccessToken)
 
 	ginContext.JSON(http.StatusOK, gin.H{
-		"access_token": tokenResult.AccessToken,
-		"expires_in":   tokenResult.ExpiresIn,
-		"token_type":   "Bearer",
+		"Authorization": tokenResult.AccessToken,
+		"access_token":  tokenResult.AccessToken,
+		"expires_in":    tokenResult.ExpiresIn,
+		"token_type":    "Bearer",
 	})
 }
