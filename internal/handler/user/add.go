@@ -78,7 +78,7 @@ func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
 
 	ginContext.Header("Content-Type", "application/json")
 	ginContext.Writer.WriteHeader(http.StatusOK)
-	ginContext.Header("Authorization", tokenResult.AccessToken)
+	ginContext.Header("Authorization", "Bearer "+tokenResult.AccessToken)
 
 	userViewModel := view.UserViewModel{
 		ID:        userData.ID,
@@ -91,8 +91,5 @@ func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
 		h.Log.Error(fmt.Sprintf("error on marshal user data response %v", err))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Something went wrong on marshal user data response"})
 	}
-
-	ginContext.SetCookie("auth_token", tokenResult.AccessToken, int(tokenResult.ExpiresIn), "/", "", false, true)
-	ginContext.SetCookie("Authorization", tokenResult.AccessToken, int(tokenResult.ExpiresIn), "/", "", false, true)
 
 }
