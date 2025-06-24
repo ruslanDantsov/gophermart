@@ -47,4 +47,12 @@ const (
 		FROM "order" o 
 		WHERE o.status ='PROCESSED' AND o.user_id = $1 
 `
+
+	GetTotalWithdrawnByUser = `
+	    SELECT COALESCE(sum(w.sum), 0)
+        FROM withdraw w
+        INNER JOIN "order" o ON w.order_id = o.id
+        INNER JOIN user_data u ON o.user_id = u.id
+        WHERE u.id = $1
+`
 )

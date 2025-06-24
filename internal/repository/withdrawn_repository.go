@@ -18,8 +18,17 @@ func NewWithdrawnRepository(storage *postgre.PostgreStorage) *WithdrawnRepositor
 }
 
 func (r *WithdrawnRepository) GetTotalWithdrawnByUser(ctx context.Context, userID uuid.UUID) (float64, error) {
-	//TODO: Implement logic
-	return 50, nil
+	var totalWithdrawn float64
+	err := r.storage.Conn.QueryRow(ctx,
+		query.GetTotalWithdrawnByUser,
+		userID).
+		Scan(&totalWithdrawn)
+
+	if err != nil {
+		return 0, errs.New(errs.Generic, "failed to execute query ", err)
+	}
+
+	return totalWithdrawn, nil
 }
 
 func (r *WithdrawnRepository) Save(ctx context.Context, withdraw entity.Withdraw) (*entity.Withdraw, error) {
