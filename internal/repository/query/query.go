@@ -41,4 +41,10 @@ const (
         INNER JOIN user_data u ON o.user_id = u.id
         WHERE u.id = $1
         ORDER BY w.created_at DESC`
+
+	GetTotalAccrualByUser = `
+		SELECT COALESCE(sum(o.accrual), 0)
+		FROM "order" o 
+		WHERE o.status ='PROCESSED' AND o.user_id = $1 
+`
 )

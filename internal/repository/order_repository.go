@@ -36,7 +36,6 @@ func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entit
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		// Order number is not yet used — proceed to insert
 	case err != nil:
 		return nil, errs.New(errs.Generic, "failed to execute query", err)
 	case existingUserID == currentUserID:
@@ -100,6 +99,15 @@ func (r *OrderRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([
 }
 
 func (r *OrderRepository) GetTotalAccrualByUser(ctx context.Context, userID uuid.UUID) (float64, error) {
-	//TODO: Implement logic
-	return 0, nil
+	var totalAccrual float64
+	err := r.storage.Conn.QueryRow(ctx,
+		query.GetTotalAccrualByUser,
+		userID).
+		Scan(&totalAccrual)
+
+	if err != nil {
+		return 0, errs.New(errs.Generic, "failed to execute query ", err)
+	}
+
+	return totalAccrual, nil
 }

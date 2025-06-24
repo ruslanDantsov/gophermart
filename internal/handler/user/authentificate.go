@@ -11,7 +11,12 @@ import (
 )
 
 func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
-	//TODO: check for content type
+	contentType := ginContext.GetHeader("Content-Type")
+	if contentType != "application/json" {
+		h.Log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
+		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported content type"})
+		return
+	}
 
 	var authCommand command.UserAuthCommand
 
@@ -51,12 +56,8 @@ func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
 	ginContext.Header("Authorization", "Bearer "+tokenResult.AccessToken)
 
 	ginContext.JSON(http.StatusOK, gin.H{
-		"Authorization": tokenResult.AccessToken,
-		"access_token":  tokenResult.AccessToken,
-		"expires_in":    tokenResult.ExpiresIn,
-		"token_type":    "Bearer",
+		"access_token": tokenResult.AccessToken,
+		"expires_in":   tokenResult.ExpiresIn,
+		"token_type":   "Bearer",
 	})
-
-	ginContext.SetCookie("auth_token", tokenResult.AccessToken, int(tokenResult.ExpiresIn), "/", "", false, true)
-	ginContext.SetCookie("Authorization", tokenResult.AccessToken, int(tokenResult.ExpiresIn), "/", "", false, true)
 }

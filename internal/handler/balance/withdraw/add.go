@@ -5,15 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
+	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"go.uber.org/zap"
 	"net/http"
 )
 
 type IWithdrawCreatorService interface {
-	AddWithdraw(ctx context.Context, withdrawCreateCommand command.WithdrawCreateCommand) (*entity.Withdraw, error)
+	AddWithdraw(ctx context.Context, withdrawCreateCommand command.WithdrawCreateCommand, authUserID uuid.UUID) (*entity.Withdraw, error)
 }
 
 type IWithdrawGetterService interface {
@@ -49,12 +51,14 @@ func (h *WithdrawHandler) HandleAddingWithdraw(ginContext *gin.Context) {
 		return
 	}
 
-	_, err := h.WithdrawCreatorService.AddWithdraw(ginContext.Request.Context(), withdrawCreateCommand)
-	//TODO: 402 — на счету недостаточно средств;
+	authUserID := ginContext.Request.Context().Value(middleware.CtxUserIDKey{}).(uuid.UUID)
+	_, err := h.WithdrawCreatorService.AddWithdraw(ginContext.Request.Context(), withdrawCreateCommand, authUserID)
 	if err != nil {
 		var appErr *errs.AppError
 		if errors.As(err, &appErr) {
 			switch appErr.Code {
+			case errs.NotEnoughAccrual:
+				ginContext.JSON(http.StatusPaymentRequired, gin.H{"error": appErr.Message})
 			case errs.OrderAddedByCurrentUser:
 				ginContext.Writer.WriteHeader(http.StatusOK)
 			case errs.OrderAddedByAnotherUser:

@@ -41,7 +41,12 @@ func NewUserHandler(log *zap.Logger, userService IUserService, authService IAuth
 }
 
 func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
-	//TODO: check for content type
+	contentType := ginContext.GetHeader("Content-Type")
+	if contentType != "application/json" {
+		h.Log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
+		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported content type"})
+		return
+	}
 
 	var userCreateCommand command.UserCreateCommand
 	if err := ginContext.ShouldBindJSON(&userCreateCommand); err != nil {

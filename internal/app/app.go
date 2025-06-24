@@ -51,7 +51,7 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 	orderHandler := order.NewOrderHandler(log, orderService, orderService)
 
 	withdrawRepository := repository.NewWithdrawnRepository(storage)
-	withdrawService := service.NewWithdrawService(orderService, withdrawRepository)
+	withdrawService := service.NewWithdrawService(orderService, withdrawRepository, orderRepository)
 	withdrawHandler := withdraw.NewWithdrawHandler(log, withdrawService, withdrawService)
 
 	balanceService := service.NewBalanceService(orderRepository, withdrawRepository)

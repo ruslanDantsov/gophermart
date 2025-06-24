@@ -5,4 +5,5 @@ const (
 	OrderAddedByCurrentUser = "Order Added By Current User"
 	OrderAddedByAnotherUser = "Order Added By Another User"
 	InvalidOrderNumber      = "Invalid Order Number"
+	NotEnoughAccrual        = "Not Enough Accrual on the user account"
 )

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
+	"github.com/ruslanDantsov/gophermart/internal/errs"
 	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"time"
@@ -17,21 +18,31 @@ type IWithdrawRepository interface {
 type IOrderCreatorService interface {
 	AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*entity.Order, error)
 }
+
 type WithdrawService struct {
-	OrderCreatorService IOrderCreatorService
-	WithdrawRepository  IWithdrawRepository
+	OrderCreatorService         IOrderCreatorService
+	WithdrawRepository          IWithdrawRepository
+	AccrualAggregatorRepository AccrualAggregatorRepository
 }
 
-func NewWithdrawService(orderCreatorService IOrderCreatorService, withdrawRepository IWithdrawRepository) *WithdrawService {
+func NewWithdrawService(orderCreatorService IOrderCreatorService, withdrawRepository IWithdrawRepository, accrualAggregatorRepository AccrualAggregatorRepository) *WithdrawService {
 	return &WithdrawService{
-		OrderCreatorService: orderCreatorService,
-		WithdrawRepository:  withdrawRepository,
+		OrderCreatorService:         orderCreatorService,
+		WithdrawRepository:          withdrawRepository,
+		AccrualAggregatorRepository: accrualAggregatorRepository,
 	}
 }
 
-func (s *WithdrawService) AddWithdraw(ctx context.Context, withdrawCreateCommand command.WithdrawCreateCommand) (*entity.Withdraw, error) {
-	orderCreateCommand := command.OrderCreateCommand{Number: withdrawCreateCommand.Order}
+func (s *WithdrawService) AddWithdraw(ctx context.Context, withdrawCreateCommand command.WithdrawCreateCommand, authUserID uuid.UUID) (*entity.Withdraw, error) {
+	totalAccrual, err := s.AccrualAggregatorRepository.GetTotalAccrualByUser(ctx, authUserID)
+	if withdrawCreateCommand.Sum > totalAccrual {
+		return nil, errs.New(errs.NotEnoughAccrual, errs.NotEnoughAccrual, err)
+	}
+	if err != nil {
+		return nil, err
+	}
 
+	orderCreateCommand := command.OrderCreateCommand{Number: withdrawCreateCommand.Order}
 	order, err := s.OrderCreatorService.AddOrder(ctx, orderCreateCommand)
 
 	if err != nil {
