@@ -69,8 +69,16 @@ func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
+	tokenResult, err := h.AuthService.GenerateJWT(userData.ID, userData.Login)
+	if err != nil {
+		h.Log.Error("Failed to generate token: " + err.Error())
+		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
 	ginContext.Header("Content-Type", "application/json")
 	ginContext.Writer.WriteHeader(http.StatusOK)
+	ginContext.Header("Authorization", tokenResult.AccessToken)
 
 	userViewModel := view.UserViewModel{
 		ID:        userData.ID,
