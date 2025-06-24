@@ -92,4 +92,7 @@ func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Something went wrong on marshal user data response"})
 	}
 
+	ginContext.SetCookie("auth_token", tokenResult.AccessToken, int(tokenResult.ExpiresIn), "/", "", false, true)
+	ginContext.SetCookie("Authorization", tokenResult.AccessToken, int(tokenResult.ExpiresIn), "/", "", false, true)
+
 }

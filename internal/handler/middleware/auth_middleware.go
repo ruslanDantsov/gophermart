@@ -15,6 +15,14 @@ type CtxUserIDKey struct{}
 
 func AuthMiddleware(jwtSecret string, logger *zap.Logger) gin.HandlerFunc {
 	return func(gContext *gin.Context) {
+		cookies := gContext.Request.Cookies()
+		for _, cookie := range cookies {
+			logger.Info("Request cookie",
+				zap.String("name", cookie.Name),
+				zap.String("value", cookie.Value),
+			)
+		}
+
 		var tokenString string
 		authHeader := gContext.GetHeader("Authorization")
 		if len(authHeader) >= 7 && authHeader[:7] == "Bearer " {

@@ -49,7 +49,7 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 }
 
 func (s *OrderService) GetOrders(ctx context.Context) ([]entity.Order, error) {
-	userID := ctx.Value("userId").(uuid.UUID)
+	userID := ctx.Value(middleware.CtxUserIDKey{}).(uuid.UUID)
 	orders, err := s.OrderRepository.GetAllByUser(ctx, userID)
 	if err != nil {
 		return nil, err

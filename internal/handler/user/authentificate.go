@@ -56,4 +56,7 @@ func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
 		"expires_in":    tokenResult.ExpiresIn,
 		"token_type":    "Bearer",
 	})
+
+	ginContext.SetCookie("auth_token", tokenResult.AccessToken, int(tokenResult.ExpiresIn), "/", "", false, true)
+	ginContext.SetCookie("Authorization", tokenResult.AccessToken, int(tokenResult.ExpiresIn), "/", "", false, true)
 }
