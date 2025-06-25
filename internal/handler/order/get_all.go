@@ -16,7 +16,7 @@ func (h *OrderHandler) HandleGetOrders(ginContext *gin.Context) {
 	}
 
 	if len(orders) == 0 {
-		ginContext.Status(http.StatusNoContent)
+		ginContext.JSON(http.StatusNoContent, gin.H{})
 		return
 	}
 

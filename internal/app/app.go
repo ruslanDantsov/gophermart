@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/ruslanDantsov/gophermart/internal/client"
 	"github.com/ruslanDantsov/gophermart/internal/config"
 	"github.com/ruslanDantsov/gophermart/internal/handler"
 	"github.com/ruslanDantsov/gophermart/internal/handler/balance"
@@ -17,18 +18,20 @@ import (
 	"github.com/ruslanDantsov/gophermart/internal/service"
 	"go.uber.org/zap"
 	"net/http"
+	"sync"
 	"time"
 )
 
 type GophermartApp struct {
-	cfg             *config.Config
-	logger          *zap.Logger
-	storage         *postgre.PostgreStorage
-	commonHandler   *handler.CommonHandler
-	userHandler     *user.UserHandler
-	orderHandler    *order.OrderHandler
-	balanceHandler  *balance.BalanceHandler
-	withdrawHandler *withdraw.WithdrawHandler
+	cfg                 *config.Config
+	logger              *zap.Logger
+	accrualOrderService *service.AccrualOrderService
+	storage             *postgre.PostgreStorage
+	commonHandler       *handler.CommonHandler
+	userHandler         *user.UserHandler
+	orderHandler        *order.OrderHandler
+	balanceHandler      *balance.BalanceHandler
+	withdrawHandler     *withdraw.WithdrawHandler
 }
 
 func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) (*GophermartApp, error) {
@@ -57,15 +60,19 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 	balanceService := service.NewBalanceService(orderRepository, withdrawRepository)
 	balanceHandler := balance.NewBalanceHandler(log, balanceService)
 
+	orderStatusClient := client.NewOrderStatusClient(cfg.AccrualSystemAddress)
+	accrualOrderService := service.NewAccrualOrderService(orderService, orderStatusClient, log)
+
 	return &GophermartApp{
-		cfg:             cfg,
-		logger:          log,
-		storage:         storage,
-		commonHandler:   commonHandler,
-		userHandler:     userHandler,
-		orderHandler:    orderHandler,
-		balanceHandler:  balanceHandler,
-		withdrawHandler: withdrawHandler,
+		cfg:                 cfg,
+		logger:              log,
+		storage:             storage,
+		commonHandler:       commonHandler,
+		userHandler:         userHandler,
+		orderHandler:        orderHandler,
+		balanceHandler:      balanceHandler,
+		withdrawHandler:     withdrawHandler,
+		accrualOrderService: accrualOrderService,
 	}, nil
 }
 
@@ -101,6 +108,25 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 	}()
 
 	app.logger.Info("Server started")
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		ticker := time.NewTicker(app.cfg.ReportInterval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				app.accrualOrderService.ProcessOrders(ctx)
+			case <-ctx.Done():
+				app.logger.Info("OrderStatusSyncService received shutdown signal")
+				return
+			}
+		}
+	}()
 
 	<-ctx.Done()
 	app.logger.Info("Shutting down server...")

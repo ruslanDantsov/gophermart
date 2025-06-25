@@ -98,6 +98,36 @@ func (r *OrderRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([
 	return orders, nil
 }
 
+func (r *OrderRepository) GetUnprocessedOrders(ctx context.Context) ([]string, error) {
+	var numbers []string
+
+	rows, err := r.storage.Conn.Query(ctx, query.GetUnprocessedOrderNumbers)
+
+	if err != nil {
+		return nil, errs.New(errs.Generic, "failed to execute query ", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var number string
+		err := rows.Scan(
+			&number,
+		)
+		if err != nil {
+			return nil, errs.New(errs.Generic, "failed to scan orders ", err)
+		}
+		numbers = append(numbers, number)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, errs.New(errs.Generic, "rows iteration error ", err)
+	}
+
+	return numbers, nil
+
+}
+
 func (r *OrderRepository) GetTotalAccrualByUser(ctx context.Context, userID uuid.UUID) (float64, error) {
 	var totalAccrual float64
 	err := r.storage.Conn.QueryRow(ctx,
@@ -110,4 +140,17 @@ func (r *OrderRepository) GetTotalAccrualByUser(ctx context.Context, userID uuid
 	}
 
 	return totalAccrual, nil
+}
+
+func (r *OrderRepository) UpdateAccrualData(ctx context.Context, number string, accrual float64, status string) error {
+	_, err := r.storage.Conn.Exec(ctx,
+		query.UpdateAccrualData,
+		status,
+		accrual,
+		number)
+	if err != nil {
+		return errs.New(errs.Generic, "failed to execute query ", err)
+	}
+
+	return nil
 }

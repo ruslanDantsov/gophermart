@@ -55,4 +55,16 @@ const (
         INNER JOIN user_data u ON o.user_id = u.id
         WHERE u.id = $1
 `
+
+	GetUnprocessedOrderNumbers = `
+		SELECT number
+		FROM "order"
+		WHERE status IN ('NEW', 'PROCESSING')
+`
+
+	UpdateAccrualData = `
+	UPDATE "order"
+	SET status = $1, accrual = $2
+	WHERE number = $3
+`
 )

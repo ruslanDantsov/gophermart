@@ -14,6 +14,8 @@ import (
 type IOrderRepository interface {
 	Save(ctx context.Context, order *entity.Order) (*entity.Order, error)
 	GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Order, error)
+	GetUnprocessedOrders(ctx context.Context) ([]string, error)
+	UpdateAccrualData(ctx context.Context, number string, accrual float64, status string) error
 }
 type OrderService struct {
 	OrderRepository IOrderRepository
@@ -56,4 +58,17 @@ func (s *OrderService) GetOrders(ctx context.Context) ([]entity.Order, error) {
 	}
 
 	return orders, nil
+}
+
+func (s *OrderService) GetUnprocessedOrders(ctx context.Context) ([]string, error) {
+	numbers, err := s.OrderRepository.GetUnprocessedOrders(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return numbers, nil
+}
+
+func (s *OrderService) UpdateAccrualData(ctx context.Context, number string, accrual float64, status string) error {
+	return s.OrderRepository.UpdateAccrualData(ctx, number, accrual, status)
 }

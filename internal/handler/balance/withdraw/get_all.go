@@ -16,7 +16,7 @@ func (h *WithdrawHandler) HandleGetWithdraws(ginContext *gin.Context) {
 	}
 
 	if len(withdraws) == 0 {
-		ginContext.Status(http.StatusNoContent)
+		ginContext.JSON(http.StatusNoContent, gin.H{})
 		return
 	}
 
