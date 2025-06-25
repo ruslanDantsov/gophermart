@@ -22,8 +22,9 @@ func NewUserRepository(storage *postgre.PostgreStorage) *UserRepository {
 }
 
 func (r *UserRepository) Save(ctx context.Context, userData entity.UserData) error {
+	db := r.storage.GetExecutor(ctx)
 
-	_, err := r.storage.Conn.Exec(ctx,
+	_, err := db.Exec(ctx,
 		query.InsertOrUpdateUserData,
 		userData.ID,
 		userData.Login,
@@ -47,6 +48,8 @@ func (r *UserRepository) Save(ctx context.Context, userData entity.UserData) err
 }
 
 func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*entity.UserData, error) {
+	db := r.storage.GetExecutor(ctx)
+
 	var (
 		existingID        uuid.UUID
 		existingLogin     string
@@ -54,7 +57,7 @@ func (r *UserRepository) FindByLogin(ctx context.Context, login string) (*entity
 		existingCreatedAt time.Time
 	)
 
-	err := r.storage.Conn.QueryRow(ctx,
+	err := db.QueryRow(ctx,
 		query.FindUserByLogin,
 		login).
 		Scan(&existingID, &existingLogin, &existingPassword, &existingCreatedAt)

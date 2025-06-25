@@ -21,53 +21,53 @@ func NewOrderRepository(storage *postgre.PostgreStorage) *OrderRepository {
 }
 
 func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entity.Order, error) {
-	currentUserID := ctx.Value(middleware.CtxUserIDKey{})
-	tx, err := r.storage.Conn.Begin(ctx)
-	if err != nil {
-		return nil, errs.New(errs.Generic, "failed to begin transaction ", err)
-	}
-	defer tx.Rollback(ctx)
+	var savedOrder *entity.Order
 
-	var existingUserID uuid.UUID
-	err = tx.QueryRow(ctx,
-		query.FindUserByOrderNumber,
-		order.Number,
-	).Scan(&existingUserID)
+	err := r.storage.WithTx(ctx, func(ctx context.Context, db postgre.DBExecutor) error {
+		currentUserID := ctx.Value(middleware.CtxUserIDKey{})
 
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-	case err != nil:
-		return nil, errs.New(errs.Generic, "failed to execute query", err)
-	case existingUserID == currentUserID:
-		return nil, errs.New(errs.OrderAddedByCurrentUser, "order already added by current user", err)
-	default:
-		return nil, errs.New(errs.OrderAddedByAnotherUser, "order already added by another user", err)
-	}
+		var existingUserID uuid.UUID
+		err := db.QueryRow(ctx,
+			query.FindUserByOrderNumber,
+			order.Number,
+		).Scan(&existingUserID)
 
-	_, err = tx.Exec(ctx,
-		query.InsertOrder,
-		order.ID,
-		order.Number,
-		order.Status,
-		order.Accrual,
-		order.CreatedAt,
-		order.UserID)
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+		case err != nil:
+			return errs.New(errs.Generic, "failed to execute query", err)
+		case existingUserID == currentUserID:
+			return errs.New(errs.OrderAddedByCurrentUser, "order already added by current user", err)
+		default:
+			return errs.New(errs.OrderAddedByAnotherUser, "order already added by another user", err)
+		}
 
-	if err != nil {
-		return nil, errs.New(errs.Generic, "failed to execute query ", err)
-	}
+		_, err = db.Exec(ctx,
+			query.InsertOrder,
+			order.ID,
+			order.Number,
+			order.Status,
+			order.Accrual,
+			order.CreatedAt,
+			order.UserID)
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, errs.New(errs.Generic, "failed to commit transaction ", err)
-	}
+		if err != nil {
+			return errs.New(errs.Generic, "failed to execute query ", err)
+		}
 
-	return order, nil
+		savedOrder = order
+		return nil
+	})
+
+	return savedOrder, err
 }
 
 func (r *OrderRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Order, error) {
+	db := r.storage.GetExecutor(ctx)
+
 	var orders []entity.Order
 
-	rows, err := r.storage.Conn.Query(ctx, query.GetAllOrdersByUser, userID)
+	rows, err := db.Query(ctx, query.GetAllOrdersByUser, userID)
 
 	if err != nil {
 		return nil, errs.New(errs.Generic, "failed to execute query ", err)
@@ -99,9 +99,11 @@ func (r *OrderRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([
 }
 
 func (r *OrderRepository) GetUnprocessedOrders(ctx context.Context) ([]string, error) {
+	db := r.storage.GetExecutor(ctx)
+
 	var numbers []string
 
-	rows, err := r.storage.Conn.Query(ctx, query.GetUnprocessedOrderNumbers)
+	rows, err := db.Query(ctx, query.GetUnprocessedOrderNumbers)
 
 	if err != nil {
 		return nil, errs.New(errs.Generic, "failed to execute query ", err)
@@ -129,8 +131,10 @@ func (r *OrderRepository) GetUnprocessedOrders(ctx context.Context) ([]string, e
 }
 
 func (r *OrderRepository) GetTotalAccrualByUser(ctx context.Context, userID uuid.UUID) (float64, error) {
+	db := r.storage.GetExecutor(ctx)
+
 	var totalAccrual float64
-	err := r.storage.Conn.QueryRow(ctx,
+	err := db.QueryRow(ctx,
 		query.GetTotalAccrualByUser,
 		userID).
 		Scan(&totalAccrual)
@@ -143,7 +147,9 @@ func (r *OrderRepository) GetTotalAccrualByUser(ctx context.Context, userID uuid
 }
 
 func (r *OrderRepository) UpdateAccrualData(ctx context.Context, number string, accrual float64, status string) error {
-	_, err := r.storage.Conn.Exec(ctx,
+	db := r.storage.GetExecutor(ctx)
+
+	_, err := db.Exec(ctx,
 		query.UpdateAccrualData,
 		status,
 		accrual,

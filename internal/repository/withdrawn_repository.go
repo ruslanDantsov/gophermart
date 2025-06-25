@@ -19,8 +19,10 @@ func NewWithdrawnRepository(storage *postgre.PostgreStorage) *WithdrawnRepositor
 }
 
 func (r *WithdrawnRepository) GetTotalWithdrawByUser(ctx context.Context, userID uuid.UUID) (float64, error) {
+	db := r.storage.GetExecutor(ctx)
+
 	var totalWithdrawn float64
-	err := r.storage.Conn.QueryRow(ctx,
+	err := db.QueryRow(ctx,
 		query.GetTotalWithdrawByUser,
 		userID).
 		Scan(&totalWithdrawn)
@@ -33,7 +35,9 @@ func (r *WithdrawnRepository) GetTotalWithdrawByUser(ctx context.Context, userID
 }
 
 func (r *WithdrawnRepository) Save(ctx context.Context, withdraw entity.Withdraw) (*entity.Withdraw, error) {
-	_, err := r.storage.Conn.Exec(ctx,
+	db := r.storage.GetExecutor(ctx)
+
+	_, err := db.Exec(ctx,
 		query.InsertWithdraw,
 		withdraw.ID,
 		withdraw.Sum,
@@ -48,9 +52,11 @@ func (r *WithdrawnRepository) Save(ctx context.Context, withdraw entity.Withdraw
 }
 
 func (r *WithdrawnRepository) GetAllWithdrawDetailsByUser(ctx context.Context, userID uuid.UUID) ([]business.WithdrawDetail, error) {
+	db := r.storage.GetExecutor(ctx)
+
 	var withdraws []business.WithdrawDetail
 
-	rows, err := r.storage.Conn.Query(ctx, query.GetAllWithdrawDetailsByUser, userID)
+	rows, err := db.Query(ctx, query.GetAllWithdrawDetailsByUser, userID)
 
 	if err != nil {
 		return nil, errs.New(errs.Generic, "failed to execute query ", err)

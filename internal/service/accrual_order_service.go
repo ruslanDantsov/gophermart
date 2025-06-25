@@ -36,7 +36,7 @@ func (s *AccrualOrderService) ProcessOrders(ctx context.Context) {
 
 	processedOrderCount := 0
 	for _, orderNumber := range unprocessedOrderNumbers {
-		accrualResponse, err := s.OrderStatusClient.GetStatus(ctx, orderNumber)
+		accrualResponse, err := s.OrderStatusClient.GetAccrualData(ctx, orderNumber)
 		if err != nil {
 			s.Log.Error("Something went wrong on handling request to Accrual service",
 				zap.String("error", err.Error()),

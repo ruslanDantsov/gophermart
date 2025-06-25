@@ -35,6 +35,7 @@ func NewWithdrawService(orderCreatorService IOrderCreatorService, withdrawReposi
 }
 
 func (s *WithdrawService) AddWithdraw(ctx context.Context, withdrawCreateCommand command.WithdrawCreateCommand, authUserID uuid.UUID) (*entity.Withdraw, error) {
+
 	totalAccrual, err := s.AccrualAggregatorRepository.GetTotalAccrualByUser(ctx, authUserID)
 	if withdrawCreateCommand.Sum > totalAccrual {
 		return nil, errs.New(errs.NotEnoughAccrual, errs.NotEnoughAccrual, err)

@@ -12,28 +12,21 @@ import (
 	"go.uber.org/zap"
 )
 
-//func (r *OrderRepository) getExecer(ctx context.Context) (postgre.Execer, error) {
-//	tx := r.Storage.GetTx(ctx)
-//
-//	var execer postgre.Execer
-//	if tx != nil {
-//		execer = tx
-//	} else {
-//		conn, err := r.Storage.Conn.Acquire(ctx)
-//		if err != nil {
-//			return nil, err
-//		}
-//		defer conn.Release()
-//		execer = conn
-//	}
-//	return execer, nil
-//
-//}
+type ctxTxKey struct{}
 
-type Execer interface {
-	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
-	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+func ContextWithTx(ctx context.Context, tx pgx.Tx) context.Context {
+	return context.WithValue(ctx, ctxTxKey{}, tx)
+}
+
+func TxFromContext(ctx context.Context) (pgx.Tx, bool) {
+	tx, ok := ctx.Value(ctxTxKey{}).(pgx.Tx)
+	return tx, ok
+}
+
+type DBExecutor interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
 type PostgreStorage struct {
@@ -58,34 +51,40 @@ func NewPostgreStorage(ctx context.Context, log *zap.Logger, connectionString st
 	}, nil
 }
 
-type ctxTxKey struct{}
-
-func (ps *PostgreStorage) GetTx(ctx context.Context) pgx.Tx {
-	tx, _ := ctx.Value(ctxTxKey{}).(pgx.Tx)
-	return tx
+func (s *PostgreStorage) GetExecutor(ctx context.Context) DBExecutor {
+	if tx, ok := TxFromContext(ctx); ok {
+		return tx
+	}
+	return s.Conn
 }
 
-func (ps *PostgreStorage) WithTx(ctx context.Context, fn func(ctx context.Context) error) error {
-	tx, err := ps.Conn.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to start tx: %w", err)
+func (s *PostgreStorage) WithTx(ctx context.Context, fn func(ctx context.Context, db DBExecutor) error) error {
+	if existingTx, ok := TxFromContext(ctx); ok {
+		return fn(ctx, existingTx)
 	}
 
-	defer func() {
-		if p := recover(); p != nil {
-			_ = tx.Rollback(ctx)
-			panic(p)
+	tx, err := s.Conn.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+
+	ctx = ContextWithTx(ctx, tx)
+
+	err = fn(ctx, tx)
+
+	if err != nil {
+		rollbackErr := tx.Rollback(ctx)
+		if rollbackErr != nil {
+			s.Log.Error("rollback failed", zap.Error(rollbackErr))
 		}
-	}()
-
-	txCtx := context.WithValue(ctx, ctxTxKey{}, tx)
-
-	if err := fn(txCtx); err != nil {
-		_ = tx.Rollback(ctx)
 		return err
 	}
 
-	return tx.Commit(ctx)
+	if commitErr := tx.Commit(ctx); commitErr != nil {
+		return fmt.Errorf("commit tx: %w", commitErr)
+	}
+
+	return nil
 }
 
 func applyMigrations(connectionString string) error {

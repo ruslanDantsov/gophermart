@@ -26,7 +26,7 @@ func NewOrderStatusClient(baseURL string) *OrderStatusClient {
 	}
 }
 
-func (c *OrderStatusClient) GetStatus(ctx context.Context, orderID string) (*view.AccrualResponse, error) {
+func (c *OrderStatusClient) GetAccrualData(ctx context.Context, orderID string) (*view.AccrualResponse, error) {
 	url := fmt.Sprintf(GetOrderStatusURL, c.baseURL, orderID)
 
 	resp, err := c.httpClient.R().
