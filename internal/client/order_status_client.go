@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-const GetOrderStatusURL = "http://%s/api/orders/%s"
+const GetOrderStatusURL = "%s/api/orders/%s"
 
 type OrderStatusClient struct {
 	httpClient *resty.Client

@@ -14,7 +14,7 @@ type Config struct {
 	JWTSecret               string        `short:"j" long:"jwt" env:"JWT_SECRET" default:"rabbit_Hole" description:"Database connection string"`
 	ReportIntervalInSeconds int           `short:"i" long:"interval" env:"REPORT_INTERVAL" default:"10" description:"Frequency (in seconds) for sending requests to the accrual server"`
 	ReportInterval          time.Duration `long:"-" description:"Derived duration from ReportIntervalInSeconds"`
-	AccrualSystemAddress    string        `short:"r" long:"accrual" env:"ACCRUAL_SYSTEM_ADDRESS" default:"localhost:8080" description:"Accrual system host address"`
+	AccrualSystemAddress    string        `short:"r" long:"accrual" env:"ACCRUAL_SYSTEM_ADDRESS" default:"http://localhost:8080" description:"Accrual system host address"`
 }
 
 func NewConfig(cliArgs []string) (*Config, error) {
