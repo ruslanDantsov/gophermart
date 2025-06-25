@@ -92,7 +92,7 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 	protected.GET("/api/user/balance", app.balanceHandler.HandleGetBalance)
 
 	protected.POST("/api/user/balance/withdraw", app.withdrawHandler.HandleAddingWithdraw)
-	protected.GET("/api/user/withdraws", app.withdrawHandler.HandleGetWithdraws)
+	protected.GET("/api/user/withdrawals", app.withdrawHandler.HandleGetWithdraws)
 
 	router.NoRoute(app.commonHandler.HandleUnsupportedRequest)
 
