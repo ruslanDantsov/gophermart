@@ -36,7 +36,7 @@ func (s *BalanceService) GetBalance(ctx context.Context, userID uuid.UUID) (*bus
 	}
 
 	return &business.Balance{
-		Accrual:   totalAccrual,
+		Total:     totalAccrual - totalWithdrawn,
 		Withdrawn: totalWithdrawn,
 	}, nil
 }

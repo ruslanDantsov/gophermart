@@ -38,7 +38,7 @@ func (h *BalanceHandler) HandleGetBalance(ginContext *gin.Context) {
 	}
 
 	viewModel := view.BalanceViewModel{
-		Current:   balance.Accrual,
+		Current:   balance.Total,
 		Withdrawn: balance.Withdrawn,
 	}
 
