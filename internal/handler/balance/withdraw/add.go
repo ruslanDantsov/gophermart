@@ -9,6 +9,7 @@ import (
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
 	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
+	"github.com/ruslanDantsov/gophermart/internal/model/business"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"go.uber.org/zap"
 	"net/http"
@@ -19,7 +20,7 @@ type IWithdrawCreatorService interface {
 }
 
 type IWithdrawGetterService interface {
-	GetWithdraws(ctx context.Context) ([]entity.Withdraw, error)
+	GetWithdrawDetails(ctx context.Context) ([]business.WithdrawDetail, error)
 }
 
 type WithdrawHandler struct {

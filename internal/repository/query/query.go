@@ -34,8 +34,8 @@ const (
 		VALUES ($1, $2, $3, $4);
 	`
 
-	GetAllWithdrawsByUser = `
-        SELECT w.id, w.sum, w.created_at, w.order_id
+	GetAllWithdrawDetailsByUser = `
+        SELECT o.number, w.sum, w.created_at
         FROM withdraw w
         INNER JOIN "order" o ON w.order_id = o.id
         INNER JOIN user_data u ON o.user_id = u.id
@@ -48,7 +48,7 @@ const (
 		WHERE o.status ='PROCESSED' AND o.user_id = $1 
 `
 
-	GetTotalWithdrawnByUser = `
+	GetTotalWithdrawByUser = `
 	    SELECT COALESCE(sum(w.sum), 0)
         FROM withdraw w
         INNER JOIN "order" o ON w.order_id = o.id

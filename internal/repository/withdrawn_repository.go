@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
 	"github.com/ruslanDantsov/gophermart/internal/infrastructure/storage/postgre"
+	"github.com/ruslanDantsov/gophermart/internal/model/business"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"github.com/ruslanDantsov/gophermart/internal/repository/query"
 )
@@ -17,10 +18,10 @@ func NewWithdrawnRepository(storage *postgre.PostgreStorage) *WithdrawnRepositor
 	return &WithdrawnRepository{storage: storage}
 }
 
-func (r *WithdrawnRepository) GetTotalWithdrawnByUser(ctx context.Context, userID uuid.UUID) (float64, error) {
+func (r *WithdrawnRepository) GetTotalWithdrawByUser(ctx context.Context, userID uuid.UUID) (float64, error) {
 	var totalWithdrawn float64
 	err := r.storage.Conn.QueryRow(ctx,
-		query.GetTotalWithdrawnByUser,
+		query.GetTotalWithdrawByUser,
 		userID).
 		Scan(&totalWithdrawn)
 
@@ -46,10 +47,10 @@ func (r *WithdrawnRepository) Save(ctx context.Context, withdraw entity.Withdraw
 	return &withdraw, nil
 }
 
-func (r *WithdrawnRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Withdraw, error) {
-	var withdraws []entity.Withdraw
+func (r *WithdrawnRepository) GetAllWithdrawDetailsByUser(ctx context.Context, userID uuid.UUID) ([]business.WithdrawDetail, error) {
+	var withdraws []business.WithdrawDetail
 
-	rows, err := r.storage.Conn.Query(ctx, query.GetAllWithdrawsByUser, userID)
+	rows, err := r.storage.Conn.Query(ctx, query.GetAllWithdrawDetailsByUser, userID)
 
 	if err != nil {
 		return nil, errs.New(errs.Generic, "failed to execute query ", err)
@@ -58,12 +59,11 @@ func (r *WithdrawnRepository) GetAllByUser(ctx context.Context, userID uuid.UUID
 	defer rows.Close()
 
 	for rows.Next() {
-		var withdraw entity.Withdraw
+		var withdraw business.WithdrawDetail
 		err := rows.Scan(
-			&withdraw.ID,
+			&withdraw.OrderNumber,
 			&withdraw.Sum,
 			&withdraw.CreatedAt,
-			&withdraw.OrderID,
 		)
 		if err != nil {
 			return nil, errs.New(errs.Generic, "failed to scan withdraws ", err)

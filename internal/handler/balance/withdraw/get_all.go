@@ -7,7 +7,7 @@ import (
 )
 
 func (h *WithdrawHandler) HandleGetWithdraws(ginContext *gin.Context) {
-	withdraws, err := h.WithdrawGetterService.GetWithdraws(ginContext.Request.Context())
+	withdraws, err := h.WithdrawGetterService.GetWithdrawDetails(ginContext.Request.Context())
 
 	if err != nil {
 		h.Log.Error(err.Error())
@@ -23,7 +23,7 @@ func (h *WithdrawHandler) HandleGetWithdraws(ginContext *gin.Context) {
 	viewModels := make([]view.WithdrawViewModel, len(withdraws))
 	for i, withdraw := range withdraws {
 		viewModels[i] = view.WithdrawViewModel{
-			OrderID:     withdraw.OrderID,
+			OrderNumber: withdraw.OrderNumber,
 			Sum:         withdraw.Sum,
 			ProcessedAt: withdraw.CreatedAt,
 		}

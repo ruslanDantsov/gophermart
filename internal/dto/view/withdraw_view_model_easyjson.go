@@ -37,9 +37,7 @@ func easyjson5ec55c3eDecodeGithubComRuslanDantsovGophermartInternalDtoView(in *j
 		}
 		switch key {
 		case "order":
-			if data := in.UnsafeBytes(); in.Ok() {
-				in.AddError((out.OrderID).UnmarshalText(data))
-			}
+			out.OrderNumber = string(in.String())
 		case "sum":
 			out.Sum = float64(in.Float64())
 		case "processed_at":
@@ -63,7 +61,7 @@ func easyjson5ec55c3eEncodeGithubComRuslanDantsovGophermartInternalDtoView(out *
 	{
 		const prefix string = ",\"order\":"
 		out.RawString(prefix[1:])
-		out.RawText((in.OrderID).MarshalText())
+		out.String(string(in.OrderNumber))
 	}
 	{
 		const prefix string = ",\"sum\":"

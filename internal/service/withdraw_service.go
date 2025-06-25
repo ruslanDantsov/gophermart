@@ -6,13 +6,14 @@ import (
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
 	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
+	"github.com/ruslanDantsov/gophermart/internal/model/business"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"time"
 )
 
 type IWithdrawRepository interface {
 	Save(ctx context.Context, withdraw entity.Withdraw) (*entity.Withdraw, error)
-	GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Withdraw, error)
+	GetAllWithdrawDetailsByUser(ctx context.Context, userID uuid.UUID) ([]business.WithdrawDetail, error)
 }
 
 type IOrderCreatorService interface {
@@ -65,9 +66,9 @@ func (s *WithdrawService) AddWithdraw(ctx context.Context, withdrawCreateCommand
 	return withdraw, nil
 }
 
-func (s *WithdrawService) GetWithdraws(ctx context.Context) ([]entity.Withdraw, error) {
+func (s *WithdrawService) GetWithdrawDetails(ctx context.Context) ([]business.WithdrawDetail, error) {
 	userID := ctx.Value(middleware.CtxUserIDKey{}).(uuid.UUID)
-	withdraws, err := s.WithdrawRepository.GetAllByUser(ctx, userID)
+	withdraws, err := s.WithdrawRepository.GetAllWithdrawDetailsByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
