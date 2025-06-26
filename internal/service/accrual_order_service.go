@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/ruslanDantsov/gophermart/internal/client"
+	"github.com/ruslanDantsov/gophermart/internal/dto/view"
 	"go.uber.org/zap"
 )
 
@@ -11,13 +11,17 @@ type IUnprocessedOrderService interface {
 	UpdateAccrualData(ctx context.Context, number string, accrual float64, status string) error
 }
 
+type IAccrualClient interface {
+	GetAccrualData(ctx context.Context, orderID string) (*view.AccrualResponse, error)
+}
+
 type AccrualOrderService struct {
 	UnprocessedOrderService IUnprocessedOrderService
-	OrderStatusClient       *client.OrderStatusClient
+	OrderStatusClient       IAccrualClient
 	Log                     *zap.Logger
 }
 
-func NewAccrualOrderService(unprocessedOrderService IUnprocessedOrderService, orderStatusClient *client.OrderStatusClient, log *zap.Logger) *AccrualOrderService {
+func NewAccrualOrderService(unprocessedOrderService IUnprocessedOrderService, orderStatusClient IAccrualClient, log *zap.Logger) *AccrualOrderService {
 	return &AccrualOrderService{
 		UnprocessedOrderService: unprocessedOrderService,
 		OrderStatusClient:       orderStatusClient,
