@@ -31,7 +31,7 @@ type DBExecutor interface {
 
 type PostgreStorage struct {
 	Conn *pgxpool.Pool
-	Log  zap.Logger
+	Log  *zap.Logger
 }
 
 func NewPostgreStorage(ctx context.Context, log *zap.Logger, connectionString string) (*PostgreStorage, error) {
@@ -47,7 +47,7 @@ func NewPostgreStorage(ctx context.Context, log *zap.Logger, connectionString st
 
 	return &PostgreStorage{
 		Conn: conn,
-		Log:  *log,
+		Log:  log,
 	}, nil
 }
 
@@ -58,9 +58,9 @@ func (s *PostgreStorage) GetExecutor(ctx context.Context) DBExecutor {
 	return s.Conn
 }
 
-func (s *PostgreStorage) WithTx(ctx context.Context, fn func(ctx context.Context, db DBExecutor) error) error {
-	if existingTx, ok := TxFromContext(ctx); ok {
-		return fn(ctx, existingTx)
+func (s *PostgreStorage) WithTx(ctx context.Context, fn func(ctx context.Context) error) error {
+	if _, ok := TxFromContext(ctx); ok {
+		return fn(ctx)
 	}
 
 	tx, err := s.Conn.BeginTx(ctx, pgx.TxOptions{})
@@ -70,7 +70,7 @@ func (s *PostgreStorage) WithTx(ctx context.Context, fn func(ctx context.Context
 
 	ctx = ContextWithTx(ctx, tx)
 
-	err = fn(ctx, tx)
+	err = fn(ctx)
 
 	if err != nil {
 		rollbackErr := tx.Rollback(ctx)

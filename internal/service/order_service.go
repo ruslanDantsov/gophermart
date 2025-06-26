@@ -7,6 +7,7 @@ import (
 	"github.com/ruslanDantsov/gophermart/internal/dto/command"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
 	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
+	"github.com/ruslanDantsov/gophermart/internal/infrastructure/storage/postgre"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"time"
 )
@@ -16,14 +17,17 @@ type IOrderRepository interface {
 	GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Order, error)
 	GetUnprocessedOrders(ctx context.Context) ([]string, error)
 	UpdateAccrualData(ctx context.Context, number string, accrual float64, status string) error
+	FindUserIDByOrderNumber(ctx context.Context, orderNumber string) (uuid.UUID, error)
 }
 type OrderService struct {
+	Storage         *postgre.PostgreStorage
 	OrderRepository IOrderRepository
 }
 
-func NewOrderService(orderRepository IOrderRepository) *OrderService {
+func NewOrderService(orderRepository IOrderRepository, storage *postgre.PostgreStorage) *OrderService {
 	return &OrderService{
 		OrderRepository: orderRepository,
+		Storage:         storage,
 	}
 }
 
@@ -32,7 +36,7 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 		return nil, errs.New(errs.InvalidOrderNumber, "invalid order number", err)
 	}
 
-	userID := ctx.Value(middleware.CtxUserIDKey{}).(uuid.UUID)
+	authUserID := ctx.Value(middleware.CtxUserIDKey{}).(uuid.UUID)
 
 	rawOrder := &entity.Order{
 		ID:        uuid.New(),
@@ -40,14 +44,34 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 		Status:    entity.OrderNewStatus,
 		Accrual:   0,
 		CreatedAt: time.Now(),
-		UserID:    userID,
+		UserID:    authUserID,
 	}
 
-	if _, err := s.OrderRepository.Save(ctx, rawOrder); err != nil {
-		return nil, err
-	}
+	var savedOrder *entity.Order
+	err := s.Storage.WithTx(ctx, func(ctx context.Context) error {
+		var existingUserID uuid.UUID
+		existingUserID, err := s.OrderRepository.FindUserIDByOrderNumber(ctx, rawOrder.Number)
+		if err != nil {
+			return err
+		}
 
-	return rawOrder, nil
+		switch {
+		case existingUserID == uuid.Nil:
+		case existingUserID == authUserID:
+			return errs.New(errs.OrderAddedByCurrentUser, "order already added by current user", nil)
+		default:
+			return errs.New(errs.OrderAddedByAnotherUser, "order already added by another user", nil)
+		}
+
+		if _, err := s.OrderRepository.Save(ctx, rawOrder); err != nil {
+			return err
+		}
+
+		savedOrder = rawOrder
+		return nil
+	})
+
+	return savedOrder, err
 }
 
 func (s *OrderService) GetOrders(ctx context.Context) ([]entity.Order, error) {

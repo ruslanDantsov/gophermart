@@ -6,7 +6,6 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/ruslanDantsov/gophermart/internal/errs"
-	"github.com/ruslanDantsov/gophermart/internal/handler/middleware"
 	"github.com/ruslanDantsov/gophermart/internal/infrastructure/storage/postgre"
 	"github.com/ruslanDantsov/gophermart/internal/model/entity"
 	"github.com/ruslanDantsov/gophermart/internal/repository/query"
@@ -20,47 +19,45 @@ func NewOrderRepository(storage *postgre.PostgreStorage) *OrderRepository {
 	return &OrderRepository{storage: storage}
 }
 
-func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entity.Order, error) {
-	var savedOrder *entity.Order
+func (r *OrderRepository) FindUserIDByOrderNumber(ctx context.Context, orderNumber string) (uuid.UUID, error) {
+	db := r.storage.GetExecutor(ctx)
 
-	err := r.storage.WithTx(ctx, func(ctx context.Context, db postgre.DBExecutor) error {
-		currentUserID := ctx.Value(middleware.CtxUserIDKey{})
+	var userID uuid.UUID
+	err := db.QueryRow(ctx,
+		query.FindUserByOrderNumber,
+		orderNumber,
+	).Scan(&userID)
 
-		var existingUserID uuid.UUID
-		err := db.QueryRow(ctx,
-			query.FindUserByOrderNumber,
-			order.Number,
-		).Scan(&existingUserID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return uuid.Nil, nil
+	}
 
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-		case err != nil:
-			return errs.New(errs.Generic, "failed to execute query", err)
-		case existingUserID == currentUserID:
-			return errs.New(errs.OrderAddedByCurrentUser, "order already added by current user", err)
-		default:
-			return errs.New(errs.OrderAddedByAnotherUser, "order already added by another user", err)
-		}
-
-		_, err = db.Exec(ctx,
-			query.InsertOrder,
-			order.ID,
-			order.Number,
-			order.Status,
-			order.Accrual,
-			order.CreatedAt,
-			order.UserID)
-
-		if err != nil {
-			return errs.New(errs.Generic, "failed to execute query ", err)
-		}
-
-		savedOrder = order
-		return nil
-	})
-
-	return savedOrder, err
+	if err != nil {
+		return uuid.Nil, errs.New(errs.Generic, "failed to execute query", err)
+	}
+	return userID, nil
 }
+
+func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entity.Order, error) {
+	db := r.storage.GetExecutor(ctx)
+
+	_, err := db.Exec(ctx,
+		query.InsertOrder,
+		order.ID,
+		order.Number,
+		order.Status,
+		order.Accrual,
+		order.CreatedAt,
+		order.UserID)
+
+	if err != nil {
+		return nil, errs.New(errs.Generic, "failed to execute query ", err)
+	}
+
+	return order, nil
+}
+
+//r.storage.WithTx(ctx, func(ctx context.Context, db postgre.DBExecutor) error {
 
 func (r *OrderRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Order, error) {
 	db := r.storage.GetExecutor(ctx)
