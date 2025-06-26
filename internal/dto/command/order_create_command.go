@@ -1,5 +1,5 @@
 package command
 
 type OrderCreateCommand struct {
-	Number string
+	Number string `json:"number" binding:"required"`
 }

@@ -3,9 +3,9 @@ package errs
 import "fmt"
 
 type AppError struct {
-	Code    string // used for programmatic checking
-	Message string // client-friendly message
-	Err     error  // original error
+	Code    string
+	Message string
+	Err     error
 }
 
 func (e *AppError) Error() string {

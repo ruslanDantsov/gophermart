@@ -77,7 +77,6 @@ func NewGophermartApp(ctx context.Context, cfg *config.Config, log *zap.Logger) 
 }
 
 func (app *GophermartApp) Run(ctx context.Context) error {
-
 	router := gin.Default()
 
 	router.POST("/api/user/register", app.userHandler.HandleRegisterUser)
@@ -131,11 +130,7 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 	<-ctx.Done()
 	app.logger.Info("Shutting down server...")
 
-	//TODO: add time constant for graceful shutdown
-	//TODO: add waiting for background processes to complete
-	//TODO: add health checks for control state of server
-
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), app.cfg.GracefulShutdownInterval)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {

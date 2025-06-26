@@ -46,7 +46,7 @@ func (c *OrderStatusClient) GetAccrualData(ctx context.Context, orderID string) 
 	var responseBody view.AccrualResponse
 
 	if err := easyjson.Unmarshal(resp.Body(), &responseBody); err != nil {
-		return nil, fmt.Errorf("failed to parse response body: %w", err)
+		return nil, errs.New(errs.Generic, "failed to parse response body: %w", err)
 	}
 
 	return &responseBody, err
