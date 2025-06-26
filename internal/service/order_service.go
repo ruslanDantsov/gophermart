@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-type IOrderRepository interface {
+type OrderRepository interface {
 	Save(ctx context.Context, order *entity.Order) (*entity.Order, error)
 	GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Order, error)
 	GetUnprocessedOrders(ctx context.Context) ([]string, error)
@@ -20,14 +20,14 @@ type IOrderRepository interface {
 	FindUserIDByOrderNumber(ctx context.Context, orderNumber string) (uuid.UUID, error)
 }
 type OrderService struct {
-	Storage         *postgre.PostgreStorage
-	OrderRepository IOrderRepository
+	storage         *postgre.PostgreStorage
+	orderRepository OrderRepository
 }
 
-func NewOrderService(orderRepository IOrderRepository, storage *postgre.PostgreStorage) *OrderService {
+func NewOrderService(orderRepository OrderRepository, storage *postgre.PostgreStorage) *OrderService {
 	return &OrderService{
-		OrderRepository: orderRepository,
-		Storage:         storage,
+		orderRepository: orderRepository,
+		storage:         storage,
 	}
 }
 
@@ -48,9 +48,9 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 	}
 
 	var savedOrder *entity.Order
-	err := s.Storage.WithTx(ctx, func(ctx context.Context) error {
+	err := s.storage.WithTx(ctx, func(ctx context.Context) error {
 		var existingUserID uuid.UUID
-		existingUserID, err := s.OrderRepository.FindUserIDByOrderNumber(ctx, rawOrder.Number)
+		existingUserID, err := s.orderRepository.FindUserIDByOrderNumber(ctx, rawOrder.Number)
 		if err != nil {
 			return err
 		}
@@ -63,7 +63,7 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 			return errs.New(errs.OrderAddedByAnotherUser, "order already added by another user", nil)
 		}
 
-		if _, err := s.OrderRepository.Save(ctx, rawOrder); err != nil {
+		if _, err := s.orderRepository.Save(ctx, rawOrder); err != nil {
 			return err
 		}
 
@@ -76,7 +76,7 @@ func (s *OrderService) AddOrder(ctx context.Context, orderCreateCommand command.
 
 func (s *OrderService) GetOrders(ctx context.Context) ([]entity.Order, error) {
 	userID := ctx.Value(middleware.CtxUserIDKey{}).(uuid.UUID)
-	orders, err := s.OrderRepository.GetAllByUser(ctx, userID)
+	orders, err := s.orderRepository.GetAllByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (s *OrderService) GetOrders(ctx context.Context) ([]entity.Order, error) {
 }
 
 func (s *OrderService) GetUnprocessedOrders(ctx context.Context) ([]string, error) {
-	numbers, err := s.OrderRepository.GetUnprocessedOrders(ctx)
+	numbers, err := s.orderRepository.GetUnprocessedOrders(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -94,5 +94,5 @@ func (s *OrderService) GetUnprocessedOrders(ctx context.Context) ([]string, erro
 }
 
 func (s *OrderService) UpdateAccrualData(ctx context.Context, number string, accrual float64, status string) error {
-	return s.OrderRepository.UpdateAccrualData(ctx, number, accrual, status)
+	return s.orderRepository.UpdateAccrualData(ctx, number, accrual, status)
 }

@@ -13,8 +13,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// --- Mocks ---
-
 type MockUserRepository struct {
 	mock.Mock
 }
@@ -45,8 +43,6 @@ func (m *MockPasswordService) Compare(hashedPassword, plainPassword string) erro
 	args := m.Called(hashedPassword, plainPassword)
 	return args.Error(0)
 }
-
-// --- Tests ---
 
 func TestUserService_AddUser_Success(t *testing.T) {
 	ctx := context.Background()

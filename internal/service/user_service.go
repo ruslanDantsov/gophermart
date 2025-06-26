@@ -9,30 +9,30 @@ import (
 	"time"
 )
 
-type IUserRepository interface {
+type UserRepository interface {
 	Save(ctx context.Context, userData entity.UserData) error
 	FindByLogin(ctx context.Context, login string) (*entity.UserData, error)
 }
 
-type IPasswordService interface {
+type PasswordManager interface {
 	Hash(password string) (string, error)
 	Compare(hashedPassword, plainPassword string) error
 }
 
 type UserService struct {
-	UserRepository  IUserRepository
-	PasswordService IPasswordService
+	userRepository  UserRepository
+	passwordManager PasswordManager
 }
 
-func NewUserService(userRepository IUserRepository, passwordService IPasswordService) *UserService {
+func NewUserService(userRepository UserRepository, passwordManager PasswordManager) *UserService {
 	return &UserService{
-		UserRepository:  userRepository,
-		PasswordService: passwordService,
+		userRepository:  userRepository,
+		passwordManager: passwordManager,
 	}
 }
 
 func (s *UserService) AddUser(ctx context.Context, userCreateCommand command.UserCreateCommand) (*entity.UserData, error) {
-	hashedPassword, err := s.PasswordService.Hash(userCreateCommand.Password)
+	hashedPassword, err := s.passwordManager.Hash(userCreateCommand.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *UserService) AddUser(ctx context.Context, userCreateCommand command.Use
 		CreatedAt: time.Now(),
 	}
 
-	if err := s.UserRepository.Save(ctx, rawUserData); err != nil {
+	if err := s.userRepository.Save(ctx, rawUserData); err != nil {
 		return nil, err
 	}
 
@@ -52,12 +52,12 @@ func (s *UserService) AddUser(ctx context.Context, userCreateCommand command.Use
 }
 
 func (s *UserService) FindByLoginAndPassword(ctx context.Context, login string, password string) (*entity.UserData, error) {
-	userData, err := s.UserRepository.FindByLogin(ctx, login)
+	userData, err := s.userRepository.FindByLogin(ctx, login)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := s.PasswordService.Compare(userData.Password, password); err != nil {
+	if err := s.passwordManager.Compare(userData.Password, password); err != nil {
 		return nil, errors.New("invalid credentials")
 	}
 

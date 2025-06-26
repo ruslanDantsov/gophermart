@@ -14,23 +14,23 @@ type WithdrawnAggregatorRepository interface {
 	GetTotalWithdrawByUser(ctx context.Context, userID uuid.UUID) (float64, error)
 }
 type BalanceService struct {
-	AccrualAggregatorRepository   AccrualAggregatorRepository
-	WithdrawnAggregatorRepository WithdrawnAggregatorRepository
+	accrualAggregatorRepository   AccrualAggregatorRepository
+	withdrawnAggregatorRepository WithdrawnAggregatorRepository
 }
 
 func NewBalanceService(accrualAggregatorRepository AccrualAggregatorRepository, withdrawnAggregatorRepository WithdrawnAggregatorRepository) *BalanceService {
 	return &BalanceService{
-		AccrualAggregatorRepository:   accrualAggregatorRepository,
-		WithdrawnAggregatorRepository: withdrawnAggregatorRepository,
+		accrualAggregatorRepository:   accrualAggregatorRepository,
+		withdrawnAggregatorRepository: withdrawnAggregatorRepository,
 	}
 }
 
 func (s *BalanceService) GetBalance(ctx context.Context, userID uuid.UUID) (*business.Balance, error) {
-	totalAccrual, err := s.AccrualAggregatorRepository.GetTotalAccrualByUser(ctx, userID)
+	totalAccrual, err := s.accrualAggregatorRepository.GetTotalAccrualByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	totalWithdrawn, err := s.WithdrawnAggregatorRepository.GetTotalWithdrawByUser(ctx, userID)
+	totalWithdrawn, err := s.withdrawnAggregatorRepository.GetTotalWithdrawByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
