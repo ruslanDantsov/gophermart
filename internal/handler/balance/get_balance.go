@@ -11,28 +11,28 @@ import (
 	"net/http"
 )
 
-type IBalanceService interface {
+type BalanceGetter interface {
 	GetBalance(ctx context.Context, userID uuid.UUID) (*business.Balance, error)
 }
 
 type BalanceHandler struct {
-	Log            zap.Logger
-	BalanceService IBalanceService
+	log            zap.Logger
+	balanceService BalanceGetter
 }
 
-func NewBalanceHandler(log *zap.Logger, balanceService IBalanceService) *BalanceHandler {
+func NewBalanceHandler(log *zap.Logger, balanceService BalanceGetter) *BalanceHandler {
 	return &BalanceHandler{
-		Log:            *log,
-		BalanceService: balanceService,
+		log:            *log,
+		balanceService: balanceService,
 	}
 }
 
 func (h *BalanceHandler) HandleGetBalance(ginContext *gin.Context) {
 	currentUserID := ginContext.Request.Context().Value(middleware.CtxUserIDKey{}).(uuid.UUID)
-	balance, err := h.BalanceService.GetBalance(ginContext.Request.Context(), currentUserID)
+	balance, err := h.balanceService.GetBalance(ginContext.Request.Context(), currentUserID)
 
 	if err != nil {
-		h.Log.Error(err.Error())
+		h.log.Error(err.Error())
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong on request processing"})
 		return
 	}
@@ -43,6 +43,5 @@ func (h *BalanceHandler) HandleGetBalance(ginContext *gin.Context) {
 	}
 
 	ginContext.Header("Content-Type", "application/json")
-	ginContext.Writer.WriteHeader(http.StatusOK)
 	ginContext.JSON(http.StatusOK, viewModel)
 }

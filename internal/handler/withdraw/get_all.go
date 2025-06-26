@@ -7,10 +7,10 @@ import (
 )
 
 func (h *WithdrawHandler) HandleGetWithdraws(ginContext *gin.Context) {
-	withdraws, err := h.WithdrawGetterService.GetWithdrawDetails(ginContext.Request.Context())
+	withdraws, err := h.withdrawGetterService.GetWithdrawDetails(ginContext.Request.Context())
 
 	if err != nil {
-		h.Log.Error(err.Error())
+		h.log.Error(err.Error())
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong on request processing"})
 		return
 	}
@@ -30,6 +30,5 @@ func (h *WithdrawHandler) HandleGetWithdraws(ginContext *gin.Context) {
 	}
 
 	ginContext.Header("Content-Type", "application/json")
-	ginContext.Writer.WriteHeader(http.StatusOK)
 	ginContext.JSON(http.StatusOK, viewModels)
 }

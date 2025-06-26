@@ -15,31 +15,31 @@ import (
 	"net/http"
 )
 
-type IWithdrawCreatorService interface {
+type WithdrawCreator interface {
 	AddWithdraw(ctx context.Context, withdrawCreateCommand command.WithdrawCreateCommand, authUserID uuid.UUID) (*entity.Withdraw, error)
 }
 
-type IWithdrawGetterService interface {
+type WithdrawGetter interface {
 	GetWithdrawDetails(ctx context.Context) ([]business.WithdrawDetail, error)
 }
 
 type WithdrawHandler struct {
-	Log                    zap.Logger
-	WithdrawCreatorService IWithdrawCreatorService
-	WithdrawGetterService  IWithdrawGetterService
+	log                    zap.Logger
+	withdrawCreatorService WithdrawCreator
+	withdrawGetterService  WithdrawGetter
 }
 
-func NewWithdrawHandler(log *zap.Logger, withdrawCreatorService IWithdrawCreatorService, withdrawGetterService IWithdrawGetterService) *WithdrawHandler {
+func NewWithdrawHandler(log *zap.Logger, withdrawCreatorService WithdrawCreator, withdrawGetterService WithdrawGetter) *WithdrawHandler {
 	return &WithdrawHandler{
-		Log:                    *log,
-		WithdrawCreatorService: withdrawCreatorService,
-		WithdrawGetterService:  withdrawGetterService,
+		log:                    *log,
+		withdrawCreatorService: withdrawCreatorService,
+		withdrawGetterService:  withdrawGetterService,
 	}
 }
 func (h *WithdrawHandler) HandleAddingWithdraw(ginContext *gin.Context) {
 	contentType := ginContext.GetHeader("Content-Type")
 	if contentType != "application/json" {
-		h.Log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
+		h.log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported content type"})
 		return
 	}
@@ -47,13 +47,13 @@ func (h *WithdrawHandler) HandleAddingWithdraw(ginContext *gin.Context) {
 	var withdrawCreateCommand command.WithdrawCreateCommand
 
 	if err := ginContext.ShouldBindJSON(&withdrawCreateCommand); err != nil {
-		h.Log.Error(fmt.Sprintf("Invalid JSON: %s", err.Error()))
+		h.log.Error(fmt.Sprintf("Invalid JSON: %s", err.Error()))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	authUserID := ginContext.Request.Context().Value(middleware.CtxUserIDKey{}).(uuid.UUID)
-	_, err := h.WithdrawCreatorService.AddWithdraw(ginContext.Request.Context(), withdrawCreateCommand, authUserID)
+	_, err := h.withdrawCreatorService.AddWithdraw(ginContext.Request.Context(), withdrawCreateCommand, authUserID)
 	if err != nil {
 		var appErr *errs.AppError
 		if errors.As(err, &appErr) {
@@ -69,11 +69,11 @@ func (h *WithdrawHandler) HandleAddingWithdraw(ginContext *gin.Context) {
 			default:
 				ginContext.JSON(http.StatusInternalServerError, gin.H{"error": appErr.Message})
 			}
-			h.Log.Error(fmt.Sprintf(appErr.Message+", description: %s ", err.Error()))
+			h.log.Error(fmt.Sprintf(appErr.Message+", description: %s ", err.Error()))
 			return
 		}
 
-		h.Log.Error(fmt.Sprintf("Unexpected error: %s", err.Error()))
+		h.log.Error(fmt.Sprintf("Unexpected error: %s", err.Error()))
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
 		return
 	}
