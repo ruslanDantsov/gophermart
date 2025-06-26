@@ -1,9 +1,7 @@
 package config
 
 import (
-	"fmt"
 	"github.com/jessevdk/go-flags"
-	"os"
 	"time"
 )
 
@@ -23,8 +21,7 @@ func NewConfig(cliArgs []string) (*Config, error) {
 
 	_, err := parser.ParseArgs(cliArgs)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		panic(err)
 	}
 
 	config.ReportInterval = time.Duration(config.ReportIntervalInSeconds) * time.Second
