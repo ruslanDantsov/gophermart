@@ -17,33 +17,33 @@ import (
 	"strings"
 )
 
-type IUserService interface {
+type UserManager interface {
 	AddUser(ctx context.Context, userCreateCommand command.UserCreateCommand) (*entity.UserData, error)
 	FindByLoginAndPassword(ctx context.Context, login string, password string) (*entity.UserData, error)
 }
 
-type IAuthUtils interface {
+type AuthManager interface {
 	GenerateJWT(id uuid.UUID, username string) (*service.TokenResult, error)
 }
 
 type UserHandler struct {
-	Log         zap.Logger
-	UserService IUserService
-	AuthService IAuthUtils
+	log         zap.Logger
+	userManager UserManager
+	authManager AuthManager
 }
 
-func NewUserHandler(log *zap.Logger, userService IUserService, authService IAuthUtils) *UserHandler {
+func NewUserHandler(log *zap.Logger, userManager UserManager, authManager AuthManager) *UserHandler {
 	return &UserHandler{
-		Log:         *log,
-		UserService: userService,
-		AuthService: authService,
+		log:         *log,
+		userManager: userManager,
+		authManager: authManager,
 	}
 }
 
 func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
 	contentType := ginContext.GetHeader("Content-Type")
 	if contentType != "application/json" {
-		h.Log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
+		h.log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported content type"})
 		return
 	}
@@ -58,25 +58,25 @@ func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
 				tag := fe.Tag()
 				errorMessages = append(errorMessages, fmt.Sprintf("Field '%s' is %s", field, tag))
 			}
-			h.Log.Error("Validation failed: " + strings.Join(errorMessages, ", "))
+			h.log.Error("Validation failed: " + strings.Join(errorMessages, ", "))
 			ginContext.JSON(http.StatusBadRequest, gin.H{"error": errorMessages})
 			return
 		} else {
-			h.Log.Error("Failed to parse register user body request: " + err.Error())
+			h.log.Error("Failed to parse register user body request: " + err.Error())
 			ginContext.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 			return
 		}
 	}
 
-	userData, err := h.UserService.AddUser(ginContext.Request.Context(), userCreateCommand)
+	userData, err := h.userManager.AddUser(ginContext.Request.Context(), userCreateCommand)
 	if err != nil {
-		h.Log.Error("Failed to save user: " + err.Error())
+		h.log.Error("Failed to save user: " + err.Error())
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	tokenResult, err := h.AuthService.GenerateJWT(userData.ID, userData.Login)
+	tokenResult, err := h.authManager.GenerateJWT(userData.ID, userData.Login)
 	if err != nil {
-		h.Log.Error("Failed to generate token: " + err.Error())
+		h.log.Error("Failed to generate token: " + err.Error())
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
@@ -93,7 +93,7 @@ func (h *UserHandler) HandleRegisterUser(ginContext *gin.Context) {
 	_, err = easyjson.MarshalToWriter(userViewModel, ginContext.Writer)
 
 	if err != nil {
-		h.Log.Error(fmt.Sprintf("error on marshal user data response %v", err))
+		h.log.Error(fmt.Sprintf("error on marshal user data response %v", err))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Something went wrong on marshal user data response"})
 	}
 

@@ -13,13 +13,12 @@ import (
 func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
 	contentType := ginContext.GetHeader("Content-Type")
 	if contentType != "application/json" {
-		h.Log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
+		h.log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported content type"})
 		return
 	}
 
 	var authCommand command.UserAuthCommand
-
 	if err := ginContext.ShouldBindJSON(&authCommand); err != nil {
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
@@ -29,32 +28,31 @@ func (h *UserHandler) HandleAuthentication(ginContext *gin.Context) {
 				tag := fe.Tag()
 				errorMessages = append(errorMessages, fmt.Sprintf("Field '%s' is %s", field, tag))
 			}
-			h.Log.Error("Validation failed: " + strings.Join(errorMessages, ", "))
+			h.log.Error("Validation failed: " + strings.Join(errorMessages, ", "))
 			ginContext.JSON(http.StatusBadRequest, gin.H{"error": errorMessages})
 			return
 		} else {
-			h.Log.Error("Failed to parse Auth user body request: " + err.Error())
+			h.log.Error("Failed to parse Auth user body request: " + err.Error())
 			ginContext.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 			return
 		}
 	}
 
-	userData, err := h.UserService.FindByLoginAndPassword(ginContext.Request.Context(), authCommand.Login, authCommand.Password)
+	userData, err := h.userManager.FindByLoginAndPassword(ginContext.Request.Context(), authCommand.Login, authCommand.Password)
 	if err != nil {
-		h.Log.Error(fmt.Sprintf("User %s not found: %s", authCommand.Login, err.Error()))
+		h.log.Error(fmt.Sprintf("User %s not found: %s", authCommand.Login, err.Error()))
 		ginContext.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("User %s not found", authCommand.Login)})
 		return
 	}
 
-	tokenResult, err := h.AuthService.GenerateJWT(userData.ID, userData.Login)
+	tokenResult, err := h.authManager.GenerateJWT(userData.ID, userData.Login)
 	if err != nil {
-		h.Log.Error("Failed to generate token: " + err.Error())
+		h.log.Error("Failed to generate token: " + err.Error())
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
 
 	ginContext.Header("Authorization", "Bearer "+tokenResult.AccessToken)
-
 	ginContext.JSON(http.StatusOK, gin.H{
 		"access_token": tokenResult.AccessToken,
 		"expires_in":   tokenResult.ExpiresIn,

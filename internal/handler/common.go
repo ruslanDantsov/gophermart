@@ -8,17 +8,17 @@ import (
 )
 
 type CommonHandler struct {
-	Log zap.Logger
+	log zap.Logger
 }
 
 func NewCommonHandler(log *zap.Logger) *CommonHandler {
 	return &CommonHandler{
-		Log: *log,
+		log: *log,
 	}
 }
 
 func (h *CommonHandler) HandleUnsupportedRequest(ginContext *gin.Context) {
-	h.Log.Warn(fmt.Sprintf("Request is unsupported: url: %v; method: %v",
+	h.log.Warn(fmt.Sprintf("Request is unsupported: url: %v; method: %v",
 		ginContext.Request.RequestURI,
 		ginContext.Request.Method))
 	ginContext.String(http.StatusNotFound, "Request is unsupported")

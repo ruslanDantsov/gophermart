@@ -12,46 +12,44 @@ import (
 	"net/http"
 )
 
-type IOrderCreatorService interface {
+type OrderCreator interface {
 	AddOrder(ctx context.Context, orderCreateCommand command.OrderCreateCommand) (*entity.Order, error)
 }
 
-type IOrderGetterService interface {
+type OrderGetter interface {
 	GetOrders(ctx context.Context) ([]entity.Order, error)
 }
 
 type OrderHandler struct {
-	Log                 zap.Logger
-	OrderCreatorService IOrderCreatorService
-	OrderGetterService  IOrderGetterService
+	log                 zap.Logger
+	orderCreatorService OrderCreator
+	orderGetterService  OrderGetter
 }
 
-func NewOrderHandler(log *zap.Logger, orderCreatorService IOrderCreatorService, orderGetterService IOrderGetterService) *OrderHandler {
+func NewOrderHandler(log *zap.Logger, orderCreatorService OrderCreator, orderGetterService OrderGetter) *OrderHandler {
 	return &OrderHandler{
-		Log:                 *log,
-		OrderCreatorService: orderCreatorService,
-		OrderGetterService:  orderGetterService,
+		log:                 *log,
+		orderCreatorService: orderCreatorService,
+		orderGetterService:  orderGetterService,
 	}
 }
 
 func (h *OrderHandler) HandleRegisterOrder(ginContext *gin.Context) {
 	contentType := ginContext.GetHeader("Content-Type")
 	if contentType != "text/plain" {
-		h.Log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
+		h.log.Error(fmt.Sprintf("Unsupported content type: %s ", contentType))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Unsupported content type"})
 		return
 	}
 
 	orderNumber, err := ginContext.GetRawData()
-
 	if err != nil {
-		h.Log.Error(fmt.Sprintf("Invalid request body: %s ", err.Error()))
+		h.log.Error(fmt.Sprintf("Invalid request body: %s ", err.Error()))
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
-	_, err = h.OrderCreatorService.AddOrder(ginContext.Request.Context(), command.OrderCreateCommand{Number: string(orderNumber)})
-
+	_, err = h.orderCreatorService.AddOrder(ginContext.Request.Context(), command.OrderCreateCommand{Number: string(orderNumber)})
 	if err != nil {
 		var appErr *errs.AppError
 		if errors.As(err, &appErr) {
@@ -65,7 +63,7 @@ func (h *OrderHandler) HandleRegisterOrder(ginContext *gin.Context) {
 			default:
 				ginContext.JSON(http.StatusInternalServerError, gin.H{"error": appErr.Message})
 			}
-			h.Log.Error(fmt.Sprintf(appErr.Message+", description: %s ", err.Error()))
+			h.log.Error(fmt.Sprintf(appErr.Message+", description: %s ", err.Error()))
 			return
 		}
 	}

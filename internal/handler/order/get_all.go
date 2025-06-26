@@ -7,10 +7,10 @@ import (
 )
 
 func (h *OrderHandler) HandleGetOrders(ginContext *gin.Context) {
-	orders, err := h.OrderGetterService.GetOrders(ginContext.Request.Context())
+	orders, err := h.orderGetterService.GetOrders(ginContext.Request.Context())
 
 	if err != nil {
-		h.Log.Error(err.Error())
+		h.log.Error(err.Error())
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong on request processing"})
 		return
 	}
@@ -31,6 +31,5 @@ func (h *OrderHandler) HandleGetOrders(ginContext *gin.Context) {
 	}
 
 	ginContext.Header("Content-Type", "application/json")
-	ginContext.Writer.WriteHeader(http.StatusOK)
 	ginContext.JSON(http.StatusOK, viewModels)
 }
