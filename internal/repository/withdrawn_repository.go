@@ -57,7 +57,6 @@ func (r *WithdrawnRepository) GetAllWithdrawDetailsByUser(ctx context.Context, u
 	var withdraws []business.WithdrawDetail
 
 	rows, err := db.Query(ctx, query.GetAllWithdrawDetailsByUser, userID)
-
 	if err != nil {
 		return nil, errs.New(errs.Generic, "failed to execute query ", err)
 	}

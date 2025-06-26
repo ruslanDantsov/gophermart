@@ -63,11 +63,9 @@ func (r *OrderRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([
 	var orders []entity.Order
 
 	rows, err := db.Query(ctx, query.GetAllOrdersByUser, userID)
-
 	if err != nil {
 		return nil, errs.New(errs.Generic, "failed to execute query ", err)
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
@@ -99,7 +97,6 @@ func (r *OrderRepository) GetUnprocessedOrders(ctx context.Context) ([]string, e
 	var numbers []string
 
 	rows, err := db.Query(ctx, query.GetUnprocessedOrderNumbers)
-
 	if err != nil {
 		return nil, errs.New(errs.Generic, "failed to execute query ", err)
 	}
@@ -122,7 +119,6 @@ func (r *OrderRepository) GetUnprocessedOrders(ctx context.Context) ([]string, e
 	}
 
 	return numbers, nil
-
 }
 
 func (r *OrderRepository) GetTotalAccrualByUser(ctx context.Context, userID uuid.UUID) (float64, error) {
