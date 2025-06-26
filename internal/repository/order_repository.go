@@ -57,8 +57,6 @@ func (r *OrderRepository) Save(ctx context.Context, order *entity.Order) (*entit
 	return order, nil
 }
 
-//r.storage.WithTx(ctx, func(ctx context.Context, db postgre.DBExecutor) error {
-
 func (r *OrderRepository) GetAllByUser(ctx context.Context, userID uuid.UUID) ([]entity.Order, error) {
 	db := r.storage.GetExecutor(ctx)
 

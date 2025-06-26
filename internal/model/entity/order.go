@@ -8,6 +8,8 @@ import (
 const (
 	OrderNewStatus        = "NEW"
 	OrderProcessingStatus = "PROCESSING"
+	OrderInvalidStatus    = " INVALID"
+	OrderProcessedStatus  = "PROCESSED"
 )
 
 type Order struct {
