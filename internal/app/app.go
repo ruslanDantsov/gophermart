@@ -18,7 +18,6 @@ import (
 	"github.com/ruslanDantsov/gophermart/internal/service"
 	"go.uber.org/zap"
 	"net/http"
-	"sync"
 	"time"
 )
 
@@ -108,11 +107,7 @@ func (app *GophermartApp) Run(ctx context.Context) error {
 
 	app.logger.Info("Server started")
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
 	go func() {
-		defer wg.Done()
 		ticker := time.NewTicker(app.cfg.ReportInterval)
 		defer ticker.Stop()
 
