@@ -5,7 +5,7 @@ package view
 const (
 	AccrualOrderRegisteredStatus = "REGISTERED"
 	AccrualOrderProcessingStatus = "PROCESSING"
-	AccrualOrderInvalidStatus    = " INVALID"
+	AccrualOrderInvalidStatus    = "INVALID"
 	AccrualOrderProcessedStatus  = "PROCESSED"
 )
 
